@@ -50,6 +50,11 @@ export function TerrainTile({
         strokeWidth={1.5}
       />
       {spriteLayers?.map((layer, i) => {
+        // 2026-07-09: imageRendering:pixelatedを外した。地形の*-tile.pngは
+        // (本家エディタのパレットアイコン流用のため)ヘックス縁がアンチエイリアス無しの
+        // ハードエッジで、pixelated(ニアレストネイバー)だと非整数倍率ズームで
+        // 縁がギザギザに拡大されてしまう(ユーザー報告・目視確認済み)。
+        // 通常のブラウザ既定(bilinear相当)でヘックス縁を滑らかにする
         // バリアントレイヤーは座標ハッシュで1枚選ぶ(saltはobjects系と衝突しない100番台)
         const src =
           typeof layer === "string"
@@ -63,7 +68,6 @@ export function TerrainTile({
             y={cy - S}
             width={S * 2}
             height={S * 2}
-            style={{ imageRendering: "pixelated" }}
             pointerEvents="none"
           />
         );

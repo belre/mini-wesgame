@@ -50,7 +50,7 @@ export default function MiniGame() {
       </span>
       {game.status === "finished" && (
         <button className="primary" onClick={restart}>
-          もう一度
+          Rematch
         </button>
       )}
       <button
@@ -59,7 +59,7 @@ export default function MiniGame() {
           setGameKey((k) => k + 1);
         }}
       >
-        陣営交代して再戦
+        Swap factions &amp; rematch
       </button>
     </div>
   );

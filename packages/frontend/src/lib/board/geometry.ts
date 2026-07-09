@@ -2,7 +2,6 @@
 // HexGrid肥大化の分割(2026-07-08リファクタ)で components/HexGrid.tsx から移設。
 // 座標系の全体像は skill: board-rendering §1(盤面座標/ビュー空間/スクリーン投影)
 import { inBounds, type GameMap, type HexCoord } from "@parle-stroika/core-engine";
-import { BOARD_DIAGONAL_DEG, projectTilt } from "@/lib/tilt";
 
 // ヘックスの外接円半径。盤面px系の基本単位(立体物のoffset/jitterもこのS単位)
 export const S = 36;
@@ -50,31 +49,17 @@ export function hexPointsAt(center: { cx: number; cy: number }): string {
   ).join(" ");
 }
 
-// 同じ列(x固定、yが上下に並ぶ)でanchorの奥隣(画面奥=傾き投影後cyが小さい側)のヘックスを返す。
-// 傾き(tilted)・ビュー反転(viewFlipped)のどちらでも「奥」の向きを正しく判定するため、
-// HexGridの描画と同じ投影(viewCenter→projectTilt)をここでも行う。
+// 同じ列(x固定、yが上下に並ぶ)でanchorの奥隣(画面奥=cyが小さい側)のヘックスを返す。
 // 用途: 縦列で重なったユニットの巡回選択・敵ユニットの背後ヘックスへの移動先指定
 // (どちらもBoardScreen.tsx onHexClick。同じ「奥隣」計算を共有する)
-export function backNeighborOf(
-  map: GameMap,
-  viewFlipped: boolean,
-  tilted: boolean,
-  anchor: HexCoord,
-): HexCoord | null {
-  const { width: W, height: H } = boardPixelSize(map);
-  const origin = { cx: W / 2, cy: H / 2 };
-  const screenCy = (c: HexCoord) => {
-    const raw = hexCenter(c);
-    const flipped = viewFlipped ? { cx: W - raw.cx, cy: H - raw.cy } : raw;
-    return projectTilt(flipped, origin, tilted, BOARD_DIAGONAL_DEG).cy;
-  };
-  const anchorCy = screenCy(anchor);
+export function backNeighborOf(map: GameMap, anchor: HexCoord): HexCoord | null {
+  const anchorCy = hexCenter(anchor).cy;
   let back: HexCoord | null = null;
   let backCy = anchorCy;
   for (const dy of [-1, 1]) {
     const c = { x: anchor.x, y: anchor.y + dy };
     if (!inBounds(map, c)) continue;
-    const cy = screenCy(c);
+    const cy = hexCenter(c).cy;
     if (cy < backCy) {
       backCy = cy;
       back = c;

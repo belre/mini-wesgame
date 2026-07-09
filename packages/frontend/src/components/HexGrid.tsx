@@ -28,31 +28,16 @@ import {
   type TerrainObjectDef,
 } from "@/lib/sprites";
 import type { CombatFx } from "@/hooks/useCombatAnimations";
-import {
-  BOARD_DIAGONAL_DEG,
-  BOARD_FOOT_OFFSET_RATIO,
-  projectTilt,
-  withFootOffset,
-} from "@/lib/tilt";
-import TiltStage from "./TiltStage";
 import { S, boardPixelSize, hexCenter, hexPointsAt } from "@/lib/board/geometry";
 import { OWNER_COLORS, OWNER_COLORS_LIGHT, hpColor } from "@/lib/board/colors";
 import {
   buildTerrainObjectItems,
   hasActionableBehind,
   pickTerrainObjects,
-  projectObjectAnchor,
 } from "@/lib/board/objects";
 import { MOUNTAIN_UNIT_LIFT, UnitBody } from "./board/UnitBody";
 import { TerrainObjectBillboard } from "./board/TerrainObjectBillboard";
 import { TerrainTile } from "./board/TerrainTile";
-
-
-// 台座の縁(ジオラマPhase A)。全ヘックスを盤面平面内で下(手前)へずらした暗色ポリゴンを
-// 地形の下に敷くと、傾き表示では盤面の手前側と側面にだけ「台座の厚み」として覗く
-// (奥側は盤面自身に隠れる)。3D計算に関与しない純装飾で、色は暗い土台色(背景#0c0f14より暖色)
-const SKIRT_DEPTH = S * 0.55;
-const SKIRT_COLOR = "#2e2118";
 
 export interface HexGridProps {
   map: GameMap;
@@ -72,8 +57,6 @@ export interface HexGridProps {
   animatedPositions?: ReadonlyMap<string, { cx: number; cy: number }>;
   // 戦闘演出(useCombatAnimations): フレーム上書き・HP表示の同期・ゴースト・ダメージ数字
   combatFx?: CombatFx;
-  // 盤面の傾き(3D風)表示。地形はCSS 3D transform、ユニット等はビルボード投影(lib/tilt.ts)
-  tilted?: boolean;
   // 地形立体物の上書き(/dev/terrain の検収プレビュー専用)。terrainId→オブジェクト定義。
   // 指定された地形はコンテンツパック(TERRAIN_SPRITES)の定義より優先される
   devTerrainObjects?: Record<string, readonly TerrainObjectDef[]>;
@@ -86,9 +69,6 @@ export interface HexGridProps {
   // 地面レイヤーの上書き(同上)。terrainId→レイヤー列(本番と同じく
   // 各レイヤーは単一URLまたはバリアントURL配列)
   devTerrainGround?: Record<string, readonly (string | readonly string[])[]>;
-  // ビュー反転(180度回転)。自陣を背にして見る構図にする(boardViewFlippedFor)。
-  // 論理座標は不変で、描画位置・向き・弾の角度だけがビュー空間に変換される
-  viewFlipped?: boolean;
   // screenPos: タップ時の画面座標(clientX/Y)。縦列の重なりで奥のユニットが選びにくい問題の
   // 救済(同一位置への連続タップで奥へフォーカスを移す)のためBoardScreen側で使う
   onHexClick: (coord: HexCoord, screenPos: { x: number; y: number }) => void;
@@ -113,8 +93,6 @@ export default function HexGrid({
   guideHexes,
   animatedPositions,
   combatFx,
-  tilted = false,
-  viewFlipped = false,
   devTerrainObjects,
   devTerrainObjectsByHex,
   devTerrainGround,
@@ -134,22 +112,13 @@ export default function HexGrid({
     }
   }
 
-  // ビュー変換: 盤面中心の点対称(180度回転)。盤面ピクセル空間の全入力
-  // (ヘックス中心・移動アニメ位置・戦闘演出座標)を描画直前にこれで写す
-  const vp = (p: { cx: number; cy: number }) =>
-    viewFlipped ? { cx: width - p.cx, cy: height - p.cy } : p;
-  const viewCenter = (c: HexCoord) => vp(hexCenter(c));
-  // 傾け時のビルボード投影(tilted=falseなら恒等写像)。
-  // ユニットには足元の食い込み(-0.45×S)も掛ける。ダメージ数字・エフェクトは位置のみ投影
-  const origin = { cx: width / 2, cy: height / 2 };
-  const proj = (p: { cx: number; cy: number }) =>
-    projectTilt(vp(p), origin, tilted, BOARD_DIAGONAL_DEG);
-  const unitProj = (p: { cx: number; cy: number }) =>
-    withFootOffset(proj(p), tilted, BOARD_FOOT_OFFSET_RATIO * S);
+  const viewCenter = (c: HexCoord) => hexCenter(c);
+  // 平面固定(scale常に1)。billboardItems・戦闘演出のcx/cy/scale参照はそのまま
+  const proj = (p: { cx: number; cy: number }) => ({ ...p, scale: 1 });
+  const unitProj = proj;
   const displayPos = (u: UnitState) => animatedPositions?.get(u.id) ?? hexCenter(u.pos);
-  // 手前のユニットが上に重なるよう、描画位置(投影後の画面y)の昇順=奥から描く。
-  // - 2Dでも適用する: スプライト(72px)は行間(√3S≈62px)より背が高く、上下の隣接で重なる
-  // - 傾け時は右斜め回転(diagonal)でcxが画面yに混ざるため、投影前cyではなく投影後cyで比較する
+  // 手前のユニットが上に重なるよう、描画位置(画面y)の昇順=奥から描く。
+  // スプライト(72px)は行間(√3S≈62px)より背が高く、上下の隣接で重なるため
   const spriteY = (u: UnitState) => unitProj(displayPos(u)).cy;
 
   // ビルボードの深度ソート(ジオラマPhase B): ユニットと地形立体物(森の木々等)を
@@ -170,9 +139,7 @@ export default function HexGrid({
   const objectItems = buildTerrainObjectItems({
     map,
     cells,
-    tilted,
     viewCenter,
-    origin,
     // devプレビューの上書き(ヘックス単位→地形単位)→ コンテンツパック
     // (縁ロジック: 境界/内側・孤立でセットを選ぶ)の順に解決
     getObjects: (c, terrainId) => {
@@ -192,37 +159,14 @@ export default function HexGrid({
   ].sort((a, b) => a.y - b.y);
 
   return (
-    // flexShrink: 0 は必須。親(BoardScreenの傾けラッパー)がflexのため、スマホ等の
-    // 狭い画面でこのコンテナが縮むと、CSSの傾き回転中心(縮んだ要素の中央)とJSの
-    // 投影原点(盤面幅/2)がずれて、地形+感応域に対しスプライトだけがずれて見える
     <div style={{ position: "relative", width, height, flexShrink: 0 }}>
-      {/* 地形レイヤー(クリック判定担当)。傾きはCSS 3D transformでこの層にだけ掛かる */}
-      <TiltStage tilted={tilted} diagonalDeg={BOARD_DIAGONAL_DEG}>
-        <svg
-          viewBox={`0 0 ${width} ${height}`}
-          width={width}
-          height={height}
-          // overflow visible: 台座の縁(最下行のスキート)がviewBox外へ数px出るため
-          style={{ display: "block", overflow: "visible" }}
-        >
-      {/* 台座の縁(ジオラマPhase A)。地形より先に描き、盤面の下敷きにする。
-          隣接ヘックス同士のアンチエイリアス継ぎ目を塞ぐため同色strokeを付ける */}
-      {tilted && (
-        <g pointerEvents="none">
-          {cells.map((c) => {
-            const p = viewCenter(c);
-            return (
-              <polygon
-                key={`skirt-${hexKey(c)}`}
-                points={hexPointsAt({ cx: p.cx, cy: p.cy + SKIRT_DEPTH })}
-                fill={SKIRT_COLOR}
-                stroke={SKIRT_COLOR}
-                strokeWidth={1.5}
-              />
-            );
-          })}
-        </g>
-      )}
+      {/* 地形レイヤー(クリック判定担当) */}
+      <svg
+        viewBox={`0 0 ${width} ${height}`}
+        width={width}
+        height={height}
+        style={{ display: "block" }}
+      >
       {cells.map((c) => {
         const key = hexKey(c);
         const terrainId = TERRAIN_BY_CHAR[map.tiles[c.y][c.x]];
@@ -262,7 +206,6 @@ export default function HexGrid({
               hexY={c.y}
               transitions={transitions}
               groundOverride={devTerrainGround?.[terrainId]}
-              viewFlipped={viewFlipped}
             />
             {/* 補給拠点の領有: 所有者の色で縁取り(平面=作戦図モードの補助。
                 主表示は陣営色の小旗ビルボード)。地形の記号マーク(♣⌂▲🚩)は
@@ -392,9 +335,8 @@ export default function HexGrid({
         })()}
 
       </svg>
-      </TiltStage>
 
-      {/* ビルボードレイヤー: ユニット・ダメージ数字・エフェクトは傾けず、位置だけ投影する。
+      {/* ビルボードレイヤー: ユニット・ダメージ数字・エフェクトは位置だけ投影する。
           svg全体はクリック素通し、ユニットの<g>だけ判定を復活させる(unit head部をタップ
           しても論理ヘックスが選択される) */}
       <svg
@@ -417,7 +359,6 @@ export default function HexGrid({
                   hexX={item.c.x}
                   hexY={item.c.y}
                   hexOccupied={occupiedKeys.has(item.hexKey)}
-                  tilted={tilted}
                   revealBehind={item.revealBehind}
                   ownerIndex={item.ownerIndex}
                 />
@@ -470,7 +411,7 @@ export default function HexGrid({
                 selected={u.id === selectedUnitId}
                 nameChar={def.name.charAt(0)}
                 override={combatFx?.spriteOverrides.get(u.id) ?? null}
-                flipped={(combatFx?.flipOverrides.get(u.id) ?? u.owner === 1) !== viewFlipped}
+                flipped={combatFx?.flipOverrides.get(u.id) ?? u.owner === 1}
                 lift={lift}
                 acted={u.owner === activePlayer ? acted : undefined}
                 poisoned={u.poisoned}
@@ -598,7 +539,7 @@ export default function HexGrid({
               y={cy - sizeH / 2}
               width={size}
               height={sizeH}
-              transform={`rotate(${e.angleDeg + (viewFlipped ? 180 : 0)} ${pp.cx} ${cy})`}
+              transform={`rotate(${e.angleDeg} ${pp.cx} ${cy})`}
               style={{ imageRendering: "pixelated" }}
               pointerEvents="none"
             />

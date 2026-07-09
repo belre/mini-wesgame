@@ -18,7 +18,7 @@ export const IMPASSABLE = 99;
 export const TERRAINS: Record<string, TerrainDef> = {
   grassland: {
     id: "grassland",
-    name: "草原",
+    name: "Grassland",
     // 本家準拠(2026-07-08): swimmerは陸地にも「這い上がって」進入できる(高コスト・低防御)
     moveCost: { walk: 1, fly: 1, swim: 2, cavalry: 1, lightfoot: 1 },
     // 開けた地形: 歩兵はやや隠れられる。飛行は本家仕様で地形をほぼ無視(全地形フラット50%)。
@@ -27,7 +27,7 @@ export const TERRAINS: Record<string, TerrainDef> = {
   },
   forest: {
     id: "forest",
-    name: "森",
+    name: "Forest",
     // 騎馬は木立でコスト3(歩兵の2より重い。本家mounted準拠 — 2026-07-08 ユーザー実測)
     moveCost: { walk: 2, fly: 1, swim: 4, cavalry: 3, lightfoot: 2 },
     // 樹木が歩兵にそこそこの遮蔽を提供。飛行は地形を無視(50%均一)。水棲は陸上で無防備。
@@ -37,7 +37,7 @@ export const TERRAINS: Record<string, TerrainDef> = {
   },
   sand: {
     id: "sand",
-    name: "砂地",
+    name: "Sand",
     moveCost: { walk: 2, fly: 1, swim: 2, cavalry: 2, lightfoot: 2 },
     // 足場の悪い開けた地形: 歩兵は踏ん張りが利かず遮蔽もない。飛行は地形を無視(50%均一)。
     // 水棲は陸上で無防備。騎馬は砂に脚を取られ、開けた地形の利を失う。軽装は歩兵よりやや堅い
@@ -45,14 +45,14 @@ export const TERRAINS: Record<string, TerrainDef> = {
   },
   desert: {
     id: "desert",
-    name: "砂丘",
+    name: "Dunes",
     // 砂地と同性能の明るい砂丘地帯。見た目の識別(砂地=荒野系/砂漠=砂丘系)が主目的
     moveCost: { walk: 2, fly: 1, swim: 2, cavalry: 2, lightfoot: 2 },
     defenseBonus: { walk: 30, fly: 50, swim: 30, cavalry: 30, lightfoot: 40 },
   },
   hills: {
     id: "hills",
-    name: "丘",
+    name: "Hills",
     moveCost: { walk: 2, fly: 1, swim: 4, cavalry: 2, lightfoot: 2 },
     // 高低差が歩兵に有利。飛行は地形を無視(50%均一)。水棲は陸上で無防備(丘は特にコスト重め)。
     // 騎馬は傾斜地では歩兵より守りが弱い。軽装は身軽さを活かしてさらに堅い
@@ -60,7 +60,7 @@ export const TERRAINS: Record<string, TerrainDef> = {
   },
   mountains: {
     id: "mountains",
-    name: "岩場",
+    name: "Rocky Ground",
     // 地上部隊は侵入不可の岩山。飛行と軽装(lightfoot)だけが越えられる「壁」として機能する
     // (深水の陸版)。本家smallfoot/mountedはコスト3で進入できるが、このゲームは意図的に
     // walk/cavalryは不可のまま(2026-07-08 データ整理の対象外・既存設計を維持)。
@@ -71,7 +71,7 @@ export const TERRAINS: Record<string, TerrainDef> = {
   },
   shallow_water: {
     id: "shallow_water",
-    name: "浅瀬",
+    name: "Shallows",
     // 騎馬はコスト4(歩兵の3より重い。本家mounted準拠 — 2026-07-08 ユーザー実測)。
     // 軽装はコスト2(歩兵より身軽。本家elusivefoot準拠)
     moveCost: { walk: 3, fly: 1, swim: 1, cavalry: 4, lightfoot: 2 },
@@ -81,7 +81,7 @@ export const TERRAINS: Record<string, TerrainDef> = {
   },
   deep_water: {
     id: "deep_water",
-    name: "深水",
+    name: "Deep Water",
     moveCost: { walk: IMPASSABLE, fly: 1, swim: 1, cavalry: IMPASSABLE, lightfoot: IMPASSABLE },
     // 歩兵・騎馬・軽装は進入不可(値は参照されない)。飛行は地形を無視(50%均一)。
     // 水棲は深海でも安定した守り
@@ -89,7 +89,7 @@ export const TERRAINS: Record<string, TerrainDef> = {
   },
   obstacle: {
     id: "obstacle",
-    name: "障害物",
+    name: "Obstacle",
     // 通行不能その1(2026-07-08): フィールド上の遮蔽物(石像等)。本家に対応地形なし。
     // 飛行も越えられない完全な壁(岩場=飛行・軽装のみ可、との差別化)。
     // defenseBonusは到達不能のため参照されない(型の完全性のみ)
@@ -98,7 +98,7 @@ export const TERRAINS: Record<string, TerrainDef> = {
   },
   void: {
     id: "void",
-    name: "場外",
+    name: "Out of Bounds",
     // 通行不能その2(2026-07-08): マップの遊戯領域外(公式の「雲がけ」相当)。本家に対応地形なし。
     // 見た目は雲海で「ここはフィールドではない」を示す
     moveCost: { walk: IMPASSABLE, fly: IMPASSABLE, swim: IMPASSABLE, cavalry: IMPASSABLE, lightfoot: IMPASSABLE },
@@ -106,7 +106,7 @@ export const TERRAINS: Record<string, TerrainDef> = {
   },
   reef: {
     id: "reef",
-    name: "岸",
+    name: "Coast",
     // 本家「沿岸の暗礁」の相当。水棲の移動コストは本家reef=2に整理(2026-07-08。
     // 導入時の仮値1から訂正)。騎馬はコスト3(本家mounted準拠 — 2026-07-08 ユーザー実測)。
     // 軽装はコスト2(本家elusivefoot準拠)
@@ -117,7 +117,7 @@ export const TERRAINS: Record<string, TerrainDef> = {
   },
   cave: {
     id: "cave",
-    name: "洞窟",
+    name: "Cave",
     // 本家「洞窟」の相当。天井が低く飛行は本家fly通り移動3・防御20%まで悪化
     // (導入時の仮値から訂正)。水棲も本家通り進入可(移動3・防御20%。導入時は仮に進入不可としていた)。
     // 騎馬はコスト4(本家mounted準拠 — 2026-07-08 ユーザー実測)。軽装はコスト2で歩兵より速い
@@ -126,7 +126,7 @@ export const TERRAINS: Record<string, TerrainDef> = {
   },
   swamp: {
     id: "swamp",
-    name: "沼地",
+    name: "Swamp",
     // 湿地(本家swamp_water準拠)。騎馬はコスト4(歩兵の3より重い。本家mounted準拠 —
     // 2026-07-08 ユーザー実測)。軽装はコスト2で歩兵より速い(本家elusivefoot準拠)
     moveCost: { walk: 3, fly: 1, swim: 1, cavalry: 4, lightfoot: 2 },
@@ -135,7 +135,7 @@ export const TERRAINS: Record<string, TerrainDef> = {
   },
   tochka: {
     id: "tochka",
-    name: "トーチカ",
+    name: "Pillbox",
     // 本家「キノコの山」(fungus)の代替。騎馬はコスト4(本家mounted準拠 — 2026-07-08 ユーザー実測)。
     // 軽装はコスト2で歩兵より速い(本家elusivefoot準拠)
     moveCost: { walk: 2, fly: 3, swim: 3, cavalry: 4, lightfoot: 2 },
@@ -147,7 +147,7 @@ export const TERRAINS: Record<string, TerrainDef> = {
   },
   village: {
     id: "village",
-    name: "補給拠点",
+    name: "Supply Point",
     moveCost: { walk: 1, fly: 1, swim: 1, cavalry: 1, lightfoot: 1 },
     // 建物が歩兵に強固な遮蔽を提供。飛行は地形を無視(50%均一)。
     // 水棲は建物をある程度活用できる。騎馬は狭い路地で機動を失う。軽装は歩兵よりさらに堅い
@@ -156,7 +156,7 @@ export const TERRAINS: Record<string, TerrainDef> = {
   castle: {
     id: "castle",
     // フィクションパス2026-07-07: 城→陣地(idはcastleのまま。増援が展開される高防御区画)
-    name: "陣地",
+    name: "Camp",
     moveCost: { walk: 1, fly: 1, swim: 1, cavalry: 1, lightfoot: 1 },
     // 石壁が歩兵を強く守る。飛行は地形を無視(50%均一)。
     // 水棲も城壁の恩恵を部分的に受ける。騎馬は城内の狭い通路で機動を失う。軽装は歩兵よりさらに堅い
@@ -167,7 +167,7 @@ export const TERRAINS: Record<string, TerrainDef> = {
     // フィクションパス2026-07-07: 主城→フラッグ(旗が立つ象徴地点。リーダーがここに
     // 立つと増援要請=雇用できる。※勝利条件はフラッグ奪取ではなくリーダー撃破 —
     // チュートリアル/UIで明示すること)
-    name: "フラッグ",
+    name: "Flag",
     moveCost: { walk: 1, fly: 1, swim: 1, cavalry: 1, lightfoot: 1 },
     // 城と同等の堅牢な防御。騎馬は城と同様に機動を制限される。軽装は歩兵よりさらに堅い
     defenseBonus: { walk: 60, fly: 50, swim: 40, cavalry: 40, lightfoot: 70 },

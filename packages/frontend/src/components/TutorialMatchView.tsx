@@ -19,7 +19,7 @@ import { useCutIn } from "@/hooks/useCutIn";
 import { useLocalCpuGame } from "@/hooks/useLocalCpuGame";
 import BoardScreen from "./BoardScreen";
 
-const HUMAN_USER_ID = "あなた"; // ローカル完結のためログイン不要。表示名を兼ねる
+const HUMAN_USER_ID = "you"; // ローカル完結のためログイン不要。表示名を兼ねる
 const HUMAN_INDEX = 0;
 
 export default function TutorialMatchView({

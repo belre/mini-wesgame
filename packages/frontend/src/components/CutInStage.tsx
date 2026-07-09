@@ -5,13 +5,9 @@
 //
 // 座標系の設計: 本盤面と同じ盤面px(hexCenter)をそのまま使い、SVGのviewBoxを
 // 戦闘周辺に窓取りする。ステージは盤面px等倍(width=viewBox幅)で組み、
-// 表示サイズへの拡大は「投影後の外側2D scale」で行う —
-// CSSのperspectiveはスクリーンpx基準のため、投影前に拡大すると
-// JS側の投影計算(projectTilt)とズレる(本盤面のズーム設計と同じ理由)。
+// 表示サイズへの拡大は外側の2D scale(パネル実幅に合わせるk)で行う。
 //
-// 傾き(tilted): 本盤面と同じビルボード方式。地形はTiltStage(CSS 3D)で傾け、
-// ユニット・エフェクト・数字は平面のままprojectTiltの投影先へ置く。
-// 平面版と傾き版の両方を出せるようにして、見栄えの調整・比較に使う。
+// mini-wesgame(2026-07-09): 傾き(tilted)・視点反転(viewFlipped)は廃止し平面固定。
 //
 // 骨格の範囲: 背景の一枚絵(防御側地形単位のAI生成)はA-3のパイプライン確立後に
 // 差し替える。スキップ操作・再生ポリシー(自分の攻撃とCPU戦のみ)は結線側で今後対応
@@ -32,19 +28,12 @@ import {
 } from "@parle-stroika/core-engine";
 import type { CombatFx, CombatPlaybackInput } from "@/hooks/useCombatAnimations";
 import { imageNaturalSize, resolveAssetUrl, SPRITE_REGISTRY } from "@/lib/sprites";
-import {
-  BOARD_DIAGONAL_DEG,
-  BOARD_FOOT_OFFSET_RATIO,
-  projectTilt,
-  withFootOffset,
-} from "@/lib/tilt";
-import { HEX_WIDTH_PX, boardPixelSize, hexCenter } from "@/lib/board/geometry";
+import { HEX_WIDTH_PX, hexCenter } from "@/lib/board/geometry";
 import { OWNER_COLORS, hpColor } from "@/lib/board/colors";
 import { buildTerrainObjectItems, pickTerrainObjects } from "@/lib/board/objects";
 import { UnitBody } from "./board/UnitBody";
 import { TerrainObjectBillboard } from "./board/TerrainObjectBillboard";
 import { TerrainTile } from "./board/TerrainTile";
-import TiltStage from "./TiltStage";
 
 // 戦闘情報プレート(FEの戦闘画面の情報帯に相当): 名前・Lv・使用攻撃・HP数値。
 // HPはfx.hpOverridesで打撃に同期して減っていく(数字が動くのが「読む画面」の主役)。
@@ -118,19 +107,12 @@ export default function CutInStage({
   map,
   fx,
   current,
-  tilted = false,
-  viewFlipped = false,
   myIndex = -1,
   timeOfDay,
 }: {
   map: GameMap;
   fx: CombatFx;
   current: CombatPlaybackInput | null; // 再生中の戦闘(useCombatAnimationsのcurrent)。nullなら非表示
-  tilted?: boolean; // 傾き(3D風)版で描く
-  // ビュー変換: 本盤面と同じ180度回転(青視点)。カットインの左右上下の位置関係を
-  // 「今表示されている盤面の見た目」と一致させる(生の盤面座標のまま描くと、
-  // 反転視点では攻守の位置が本盤面と逆に見えてしまう)
-  viewFlipped?: boolean;
   // 閲覧者のプレイヤーindex。戦闘情報プレートの左右(自軍=左・敵軍=右)の判定に使う。
   // -1(観戦等)のときは攻撃側=左にフォールバック
   myIndex?: number;
@@ -156,23 +138,16 @@ export default function CutInStage({
 
   if (!current) return null;
 
-  // ビュー変換(本盤面のHexGridと同じ盤面中心の点対称)。fxの座標(ランジ・エフェクト・
-  // 数字)は生の盤面座標で来るため、描画直前にすべてvpで写す
-  const { width: boardW, height: boardH } = boardPixelSize(map);
-  const vp = (p: { cx: number; cy: number }) =>
-    viewFlipped ? { cx: boardW - p.cx, cy: boardH - p.cy } : p;
-  const viewCenter = (c: { x: number; y: number }) => vp(hexCenter(c));
+  const viewCenter = (c: { x: number; y: number }) => hexCenter(c);
 
   const a = viewCenter(current.attacker.pos);
   const d = viewCenter(current.defender.pos);
   const mid = { cx: (a.cx + d.cx) / 2, cy: (a.cy + d.cy) / 2 };
   const k = panelW / VIEW_W;
 
-  // 投影: TiltStageの回転中心=ステージ中央=viewBox中央(mid)なので、originはmid
-  const proj = (p: { cx: number; cy: number }) =>
-    projectTilt(vp(p), mid, tilted, BOARD_DIAGONAL_DEG);
-  const unitProj = (p: { cx: number; cy: number }) =>
-    withFootOffset(proj(p), tilted, BOARD_FOOT_OFFSET_RATIO * S);
+  // 平面固定(scale常に1)。パネル実幅への拡大は外側のCSS scale(k)で行う
+  const proj = (p: { cx: number; cy: number }) => ({ ...p, scale: 1 });
+  const unitProj = proj;
 
   // 舞台の地形: 攻撃側・防御側それぞれの周辺1hex(重複除去で6〜14hex)
   const seen = new Set<string>();
@@ -242,9 +217,7 @@ export default function CutInStage({
   const objectItems = buildTerrainObjectItems({
     map,
     cells,
-    tilted,
     viewCenter,
-    origin: mid,
     getObjects: (c, terrainId) => {
       const def = SPRITE_REGISTRY.getTerrainSprite(terrainId);
       return def ? pickTerrainObjects(def, map, c, terrainId) : undefined;
@@ -294,26 +267,23 @@ export default function CutInStage({
               transformOrigin: "top left",
             }}
           >
-            <TiltStage tilted={tilted} diagonalDeg={BOARD_DIAGONAL_DEG}>
-              <svg viewBox={viewBox} width={VIEW_W} height={VIEW_H} style={{ display: "block" }}>
-                {cells.map((c) => {
-                  const p = viewCenter(c);
-                  return (
-                    <TerrainTile
-                      key={hexKey(c)}
-                      cx={p.cx}
-                      cy={p.cy}
-                      terrainId={terrainAt(map, c).id}
-                      hexX={c.x}
-                      hexY={c.y}
-                      viewFlipped={viewFlipped}
-                    />
-                  );
-                })}
-              </svg>
-            </TiltStage>
+            <svg viewBox={viewBox} width={VIEW_W} height={VIEW_H} style={{ display: "block" }}>
+              {cells.map((c) => {
+                const p = viewCenter(c);
+                return (
+                  <TerrainTile
+                    key={hexKey(c)}
+                    cx={p.cx}
+                    cy={p.cy}
+                    terrainId={terrainAt(map, c).id}
+                    hexX={c.x}
+                    hexY={c.y}
+                  />
+                );
+              })}
+            </svg>
 
-            {/* ビルボードレイヤー: ユニット・エフェクト・数字は傾けず、位置だけ投影する */}
+            {/* ビルボードレイヤー: ユニット・エフェクト・数字は位置だけ投影する */}
             <svg
               viewBox={viewBox}
               width={VIEW_W}
@@ -334,7 +304,6 @@ export default function CutInStage({
                         hexX={item.c.x}
                         hexY={item.c.y}
                         hexOccupied={occupiedKeys.has(hexKey(item.c))}
-                        tilted={tilted}
                         ownerIndex={item.ownerIndex}
                       />
                     </g>
@@ -376,7 +345,7 @@ export default function CutInStage({
                       selected={false}
                       nameChar={def.name.charAt(0)}
                       override={fx.spriteOverrides.get(u.id) ?? null}
-                      flipped={(fx.flipOverrides.get(u.id) ?? u.owner === 1) !== viewFlipped}
+                      flipped={fx.flipOverrides.get(u.id) ?? u.owner === 1}
                     />
                     {/* HPバー(左肩縦・打撃同期)は戦闘の主役2体のみ。書き割りには出さない */}
                     {isCombatant && (
@@ -403,7 +372,7 @@ export default function CutInStage({
                 );
               })}
 
-              {/* 飛び道具・詠唱halo等(描画順=配列順)。傾け時は進行方向に平面回転分を足す */}
+              {/* 飛び道具・詠唱halo等(描画順=配列順) */}
               {fx.effects.map((e) => {
                 const pp = proj(e);
                 const cy = pp.cy + e.dy; // 縦オフセットは投影・ビュー変換の後に適用(上は上のまま)
@@ -417,7 +386,7 @@ export default function CutInStage({
                     y={cy - h / 2}
                     width={w}
                     height={h}
-                    transform={`rotate(${e.angleDeg + (viewFlipped ? 180 : 0) + (tilted ? BOARD_DIAGONAL_DEG : 0)} ${pp.cx} ${cy})`}
+                    transform={`rotate(${e.angleDeg} ${pp.cx} ${cy})`}
                     style={{ imageRendering: "pixelated" }}
                   />
                 );

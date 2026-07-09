@@ -21,7 +21,6 @@ export function TerrainTile({
   hexY,
   transitions,
   groundOverride,
-  viewFlipped,
 }: {
   cx: number;
   cy: number;
@@ -35,11 +34,6 @@ export function TerrainTile({
   // 地面レイヤーの上書き(/dev/terrain の検収プレビュー専用)。候補タイルを
   // 盤面全体に敷き詰めて継ぎ目・リピート感を見るために使う
   groundOverride?: readonly (string | readonly string[])[];
-  // ビュー反転(180度回転)。盤面は紙の地図を180度回すのと同じ剛体回転なので、
-  // ヘックスの位置(呼び出し側でviewCenter経由)だけでなく地面の絵自体も自分の中心で
-  // 180度回す必要がある(丘のNE端/SW端のような向きを持つ絵が反転時に据え置きになる
-  // バグの修正。2026-07-08)。ユニット等のビルボードは常に正立させたいので別扱い(mirror)
-  viewFlipped?: boolean;
 }) {
   const registryLayers = useTerrainSprite(terrainId);
   const overrideReady = useImagesReady(
@@ -69,7 +63,6 @@ export function TerrainTile({
             y={cy - S}
             width={S * 2}
             height={S * 2}
-            transform={viewFlipped ? `rotate(180 ${round2(cx)} ${round2(cy)})` : undefined}
             style={{ imageRendering: "pixelated" }}
             pointerEvents="none"
           />

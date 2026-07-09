@@ -10,18 +10,8 @@ import {
   type HexCoord,
 } from "@parle-stroika/core-engine";
 import type { TerrainObjectDef } from "../anim/model";
-import {
-  BOARD_DIAGONAL_DEG,
-  BOARD_FOOT_OFFSET_RATIO,
-  projectTilt,
-  withFootOffset,
-} from "../tilt";
 import { S } from "./geometry";
 
-// 地形立体物(ジオラマPhase B)の接地バイアス: ユニットの足元よりわずかに手前(下)に
-// 接地させ、同一ヘックスでは立体物が画家順で後(手前)に描かれるようにする。
-// これで「木がユニットの足元・下半身を隠す」遮蔽が成立する(design_diorama.md)
-export const OBJECT_FOOT_BIAS_RATIO = 0.15;
 // 立体物画像の下端(接地線)のヘックス中心からの距離。中心と下頂点の中間あたり
 export const OBJECT_BASELINE_RATIO = 0.55;
 
@@ -73,11 +63,11 @@ export function keepOwnerIndex(map: GameMap, c: HexCoord): number | undefined {
   return undefined;
 }
 
-// 立体物の不透明度。3条件は独立(2026-07-08 実地で確定した優先順):
+// 立体物の不透明度。2条件は独立(2026-07-08 実地で確定した優先順):
 // 1. revealBehind: 真後ろのヘックスが行動対象(移動先等)の間は狙い所を見せる。
 //    fadeMode: never の岩にも掛かる(操作性>景観)
 // 2. 可読性フェード: 占有ユニットを隠す立体物(occludes)を fadeMode に従って薄く。
-//    always=常時 / tilted=傾き表示のみ(小塊は平面でフェードすると自分が消える) / never=しない
+//    always=常時 / never=しない
 // フェード値は2系統で別(2026-07-08 分離):
 // - reveal(0.35): 操作性の救済。奥のハイライトと地面を「見せる」のが目的なので強めに抜く
 // - occupied(0.5): 可読性フェード。ユニットの視認と「森に隠れている」空気の両立なので
@@ -87,11 +77,11 @@ const FADE_OCCUPIED = 0.5;
 
 export function objectOpacity(
   obj: Pick<TerrainObjectDef, "occludes" | "fadeMode">,
-  opts: { hexOccupied: boolean; tilted: boolean; revealBehind?: boolean },
+  opts: { hexOccupied: boolean; revealBehind?: boolean },
 ): number {
   if (opts.revealBehind) return FADE_REVEAL;
   const mode = obj.fadeMode ?? "always";
-  if (obj.occludes && opts.hexOccupied && mode !== "never" && (mode === "always" || opts.tilted)) {
+  if (obj.occludes && opts.hexOccupied && mode === "always") {
     return FADE_OCCUPIED;
   }
   return 1;
@@ -111,21 +101,15 @@ export interface TerrainObjectItem {
   ownerIndex?: number;
 }
 
-// ビュー空間のアンカー1点を投影して足元位置(pp)にする。
+// ビュー空間のアンカー1点をそのまま足元位置(pp)にする(平面固定・scale常に1)。
 // villageの占領旗などbuildTerrainObjectItemsを通らない動的オブジェクトも使う
 export function projectObjectAnchor(
   viewCenter: { cx: number; cy: number },
   obj: TerrainObjectDef,
   c: HexCoord,
   oi: number,
-  origin: { cx: number; cy: number },
-  tilted: boolean,
 ): { cx: number; cy: number; scale: number } {
-  return withFootOffset(
-    projectTilt(objectAnchor(viewCenter, obj, c.x, c.y, oi), origin, tilted, BOARD_DIAGONAL_DEG),
-    tilted,
-    (BOARD_FOOT_OFFSET_RATIO + OBJECT_FOOT_BIAS_RATIO) * S,
-  );
+  return { ...objectAnchor(viewCenter, obj, c.x, c.y, oi), scale: 1 };
 }
 
 // 地形立体物アイテムの組み立て(HexGridとCutInStageの共通実装。
@@ -133,11 +117,9 @@ export function projectObjectAnchor(
 export function buildTerrainObjectItems(opts: {
   map: GameMap;
   cells: readonly HexCoord[];
-  tilted: boolean;
   // ビュー変換済みの中心(視点反転を吸収する)。投影原点はレンダラーごとに違う
   // (HexGrid=盤面中央 / CutInStage=戦闘の中点)
   viewCenter: (c: HexCoord) => { cx: number; cy: number };
-  origin: { cx: number; cy: number };
   // 立体物定義の解決(devプレビューの上書き→コンテンツパックの順は呼び出し側が握る)
   getObjects: (c: HexCoord, terrainId: string) => readonly TerrainObjectDef[] | undefined;
   // 操作性の救済(HexGridのみ): 真後ろのヘックスが行動対象なら薄くする
@@ -161,7 +143,7 @@ export function buildTerrainObjectItems(opts: {
         : { dx: 0, dy: 0 };
       const pp = projectObjectAnchor(
         { cx: base.cx + pullVec.dx, cy: base.cy + pullVec.dy },
-        obj, c, oi, opts.origin, opts.tilted,
+        obj, c, oi,
       );
       return {
         kind: "object" as const,

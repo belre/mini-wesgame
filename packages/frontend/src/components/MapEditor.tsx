@@ -52,7 +52,6 @@ export default function MapEditor() {
   const [tiles, setTiles] = useState<string[]>(() => blankTiles(DEFAULT_W, DEFAULT_H));
   const [brush, setBrush] = useState("f");
   const [symmetric, setSymmetric] = useState(true);
-  const [tilted, setTilted] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
   // ユニット配置(プレビュー専用: マップJSONのスキーマ外なので保存されない)。
   // 「この地形密度で駒が読めるか」をエディタ内で確認するための書き割り
@@ -267,10 +266,6 @@ export default function MapEditor() {
           <input type="checkbox" checked={symmetric} onChange={(e) => setSymmetric(e.target.checked)} />
           点対称ペイント(対戦マップ用: 盤面中心の対称位置にも塗る)
         </label>
-        <label>
-          <input type="checkbox" checked={tilted} onChange={(e) => setTilted(e.target.checked)} />
-          傾き表示
-        </label>
         <button onClick={undo}>元に戻す</button>
         <button onClick={() => { history.current.push(tiles); setTiles(blankTiles(width, height)); }}>
           全消去(草原)
@@ -312,7 +307,6 @@ export default function MapEditor() {
           attackTargets={EMPTY_SET}
           recruitTargets={EMPTY_SET}
           draftTarget={null}
-          tilted={tilted}
           onHexClick={paint}
         />
       </div>

@@ -10,7 +10,7 @@ const HUMAN_RESISTANCES = {
 // 忠誠軍(フェーズ1の実装対象)。数値は本家Wesnothの同名ユニットに近似。
 export const LOYALISTS: Faction = {
   id: "loyalists",
-  name: "人間族",
+  name: "Humans",
   defaultLeaderUnitId: "lieutenant",
   assetPackUrl: "/assets/packs/loyalists.json",
   recruitableUnitIds: [
@@ -31,14 +31,14 @@ export const LOYALISTS: Faction = {
   units: [
     {
       id: "lieutenant",
-      name: "将軍",
+      name: "General",
       level: 2,
       hp: 40,
       movement: { type: "walk", points: 6 },
       abilities: ["leadership"],
       attacks: [
-        { id: "sword", name: "剣", damage: 8, count: 3, type: "blade", range: "melee" },
-        { id: "crossbow", name: "クロスボウ", damage: 5, count: 3, type: "pierce", range: "ranged" },
+        { id: "sword", name: "Sword", damage: 8, count: 3, type: "blade", range: "melee" },
+        { id: "crossbow", name: "Crossbow", damage: 5, count: 3, type: "pierce", range: "ranged" },
       ],
       resistances: HUMAN_RESISTANCES,
       alignment: "lawful",
@@ -48,16 +48,16 @@ export const LOYALISTS: Faction = {
     },
     {
       id: "white_mage",
-      name: "魔術師",
+      name: "Mage",
       level: 2,
       hp: 35,
       movement: { type: "walk", points: 5 },
       abilities: ["cures", "heals8"],
       attacks: [
-        { id: "staff", name: "杖", damage: 6, count: 2, type: "impact", range: "melee" },
+        { id: "staff", name: "Staff", damage: 6, count: 2, type: "impact", range: "melee" },
         {
           id: "lightbeam",
-          name: "ホーリーレイ", // 2026-07-08 ユーザー指定(id不変。type: arcane は維持)
+          name: "Holy Ray", // 2026-07-08 ユーザー指定(id不変。type: arcane は維持)
           damage: 9,
           count: 3,
           type: "arcane",
@@ -73,12 +73,12 @@ export const LOYALISTS: Faction = {
     },
     {
       id: "swordsman",
-      name: "ブレードマスター",
+      name: "Blademaster",
       level: 2,
       hp: 55,
       movement: { type: "walk", points: 5 },
       attacks: [
-        { id: "sword", name: "剣", damage: 8, count: 4, type: "blade", range: "melee" }
+        { id: "sword", name: "Sword", damage: 8, count: 4, type: "blade", range: "melee" }
       ],
       // 2026-07-08 ユーザー指定: 槍兵系(pikeman)と同系統の重装なので斬撃・打撃に強い
       resistances: { ...HUMAN_RESISTANCES, blade: 20, impact: 20 },
@@ -89,14 +89,14 @@ export const LOYALISTS: Faction = {
     },
     {
       id: "pikeman",
-      name: "槍兵",
+      name: "Spearman",
       level: 2,
       hp: 55,
       movement: { type: "walk", points: 5},
       attacks : [
         {
           id: "spear",
-          name: "長槍",
+          name: "Pike",
           damage: 10,
           count: 3,
           type: "pierce",
@@ -113,13 +113,13 @@ export const LOYALISTS: Faction = {
     },
     {
       id: "longbowman",
-      name: "弓兵",
+      name: "Archer",
       level: 2,
       hp: 51,
       movement : { type: "walk", points: 5},
       attacks: [
-        { id: "dagger", name: "剣", damage: 8, count: 2, type: "blade", range: "melee" },
-        { id: "bow", name: "大弓", damage: 10, count: 3, type: "pierce", range: "ranged" },
+        { id: "dagger", name: "Sword", damage: 8, count: 2, type: "blade", range: "melee" },
+        { id: "bow", name: "Longbow", damage: 10, count: 3, type: "pierce", range: "ranged" },
       ],
       resistances: HUMAN_RESISTANCES,
       alignment: "lawful",
@@ -129,12 +129,12 @@ export const LOYALISTS: Faction = {
     },
     {
       id: "shocktrooper",
-      name: "重歩兵",
+      name: "Heavy Infantry",
       level: 2,
       hp: 52,
       movement : { type: "walk", points: 4},
       attacks: [
-        { id: "mace", name: "メイス", damage: 18, count: 2, type: "impact", range: "melee" },
+        { id: "mace", name: "Mace", damage: 18, count: 2, type: "impact", range: "melee" },
       ],
       resistances: {
         blade: 50, pierce: 40, impact: 10,
@@ -147,13 +147,13 @@ export const LOYALISTS: Faction = {
     },
     {
       id: "dragoon",
-      name: "竜騎兵", // 2026-07-08 ユーザー指定: Lv1/Lv2で同名になったため統一改名(id不変)
+      name: "Dragoon", // 2026-07-08 ユーザー指定: Lv1/Lv2で同名になったため統一改名(id不変)
       level: 2,
       hp: 49,
       movement: { type: "walk", points: 9},
       attacks: [
-        { id: "sword", name: "剣", damage: 6, count: 4, type: "blade", range: "melee" },
-        { id: "crossbow", name: "クロスボウ", damage: 12, count: 1, type: "pierce", range: "ranged"}
+        { id: "sword", name: "Sword", damage: 6, count: 4, type: "blade", range: "melee" },
+        { id: "crossbow", name: "Crossbow", damage: 12, count: 1, type: "pierce", range: "ranged"}
       ],
       resistances: {
         blade: 30, pierce: -20, impact: 40,
@@ -167,14 +167,14 @@ export const LOYALISTS: Faction = {
     },
     {
       id: "cuirassier",
-      name: "突撃騎兵",
+      name: "Lancer",
       level: 2,
       hp: 50,
       movement: { type: "walk", points: 10},
       attacks: [
         {
           id: "charged_saber",
-          name: "ランス", // 2026-07-08 ユーザー指定: Lv1(horseman)と表記統一(id不変)
+          name: "Lance", // 2026-07-08 ユーザー指定: Lv1(horseman)と表記統一(id不変)
           damage: 12,
           count: 3,
           type: "pierce",
@@ -194,13 +194,13 @@ export const LOYALISTS: Faction = {
     },
     {
       id: "duelist",
-      name: "剣術士",
+      name: "Duelist",
       level: 2,
       hp: 44,
       movement: { type: "walk", points: 7},
       attacks: [
-        { id: "saber", name: "サーベル", damage: 7, count: 4, type: "blade", range: "melee" },
-        { id: "crossbow", name: "クロスボウ", damage: 12, count: 1, type: "pierce", range: "ranged"}
+        { id: "saber", name: "Saber", damage: 7, count: 4, type: "blade", range: "melee" },
+        { id: "crossbow", name: "Crossbow", damage: 12, count: 1, type: "pierce", range: "ranged"}
       ],
       resistances: {
         "blade" : -30, "pierce" : -20, "impact" : -20,
@@ -214,14 +214,14 @@ export const LOYALISTS: Faction = {
     },
     {
       id: "merman_triton",
-      name: "マーマン",
+      name: "Merman",
       level: 2,
       hp: 50,
       movement: { type: "swim", points: 6},
       attacks: [
         {
           id: "trident",
-          name: "トライデント",
+          name: "Trident",
           damage: 10,
           count: 3,
           type: "pierce",
@@ -229,7 +229,7 @@ export const LOYALISTS: Faction = {
         },
         {
           id: "sword",
-          name: "剣",
+          name: "Sword",
           damage: 13,
           count: 2,
           type: "blade",
@@ -246,21 +246,21 @@ export const LOYALISTS: Faction = {
     },
     {
       id: "spearman",
-      name: "槍兵",
+      name: "Spearman",
       level: 1,
       hp: 36,
       movement: { type: "walk", points: 5 },
       attacks: [
         {
           id: "spear",
-          name: "槍",
+          name: "Spear",
           damage: 7,
           count: 3,
           type: "pierce",
           range: "melee",
           specials: ["firststrike"],
         },
-        { id: "javelin", name: "投げ槍", damage: 6, count: 1, type: "pierce", range: "ranged" },
+        { id: "javelin", name: "Javelin", damage: 6, count: 1, type: "pierce", range: "ranged" },
       ],
       resistances: HUMAN_RESISTANCES,
       alignment: "lawful",
@@ -272,13 +272,13 @@ export const LOYALISTS: Faction = {
     },
     {
       id: "bowman",
-      name: "弓兵",
+      name: "Archer",
       level: 1,
       hp: 33,
       movement: { type: "walk", points: 5 },
       attacks: [
-        { id: "dagger", name: "短剣", damage: 4, count: 2, type: "blade", range: "melee" },
-        { id: "bow", name: "弓", damage: 6, count: 3, type: "pierce", range: "ranged" },
+        { id: "dagger", name: "Dagger", damage: 4, count: 2, type: "blade", range: "melee" },
+        { id: "bow", name: "Bow", damage: 6, count: 3, type: "pierce", range: "ranged" },
       ],
       resistances: HUMAN_RESISTANCES,
       alignment: "lawful",
@@ -290,12 +290,12 @@ export const LOYALISTS: Faction = {
     },
     {
       id: "heavy_infantryman",
-      name: "重歩兵",
+      name: "Heavy Infantry",
       level: 1,
       hp: 38,
       movement: { type: "walk", points: 4 },
       attacks: [
-        { id: "mace", name: "メイス", damage: 11, count: 2, type: "impact", range: "melee" },
+        { id: "mace", name: "Mace", damage: 11, count: 2, type: "impact", range: "melee" },
       ],
       resistances: {
         blade: 50, pierce: 40, impact: 10,
@@ -310,12 +310,12 @@ export const LOYALISTS: Faction = {
     },
     {
       id: "cavalryman",
-      name: "竜騎兵", // 2026-07-08 ユーザー指定: Lv1/Lv2で同名になったため統一改名(id不変)
+      name: "Dragoon", // 2026-07-08 ユーザー指定: Lv1/Lv2で同名になったため統一改名(id不変)
       level: 1,
       hp: 34,
       movement: { type: "walk", points: 8 },
       attacks: [
-        { id: "sword", name: "剣", damage: 6, count: 3, type: "blade", range: "melee" },
+        { id: "sword", name: "Sword", damage: 6, count: 3, type: "blade", range: "melee" },
       ],
       resistances: {
         blade: 30, pierce: -20, impact: 40,
@@ -331,14 +331,14 @@ export const LOYALISTS: Faction = {
     },
     {
       id: "horseman",
-      name: "突撃騎兵",
+      name: "Lancer",
       level: 1,
       hp: 38,
       movement: { type: "walk", points: 8 },
       attacks: [
         {
           id: "lance",
-          name: "ランス",
+          name: "Lance",
           damage: 9,
           count: 2,
           type: "pierce",
@@ -360,15 +360,15 @@ export const LOYALISTS: Faction = {
     },
     {
       id: "mage",
-      name: "魔術師",
+      name: "Mage",
       level: 1,
       hp: 24,
       movement: { type: "walk", points: 5 },
       attacks: [
-        { id: "staff", name: "杖", damage: 5, count: 1, type: "impact", range: "melee" },
+        { id: "staff", name: "Staff", damage: 5, count: 1, type: "impact", range: "melee" },
         {
           id: "magic_missile",
-          name: "スパーク", // 2026-07-08 ユーザー指定(id不変。type: fireも維持 — 本家「王位継承者」の老魔術師も雷を炎属性扱い)
+          name: "Spark", // 2026-07-08 ユーザー指定(id不変。type: fireも維持 — 本家「王位継承者」の老魔術師も雷を炎属性扱い)
           damage: 7,
           count: 3,
           type: "fire",
@@ -386,12 +386,12 @@ export const LOYALISTS: Faction = {
     },
     {
       id: "fencer",
-      name: "剣術士",
+      name: "Duelist",
       level: 1,
       hp: 28,
       movement: { type: "walk", points: 6 },
       attacks: [
-        { id: "saber", name: "サーベル", damage: 4, count: 4, type: "blade", range: "melee" },
+        { id: "saber", name: "Saber", damage: 4, count: 4, type: "blade", range: "melee" },
       ],
       resistances: {
         "blade" : -30, "pierce" : -20, "impact" : -20,
@@ -407,14 +407,14 @@ export const LOYALISTS: Faction = {
     },
     {
       id: "merman_fighter",
-      name: "マーマン",
+      name: "Merman",
       level: 1,
       hp: 36,
       movement: { type: "swim", points: 6},
       attacks: [
         {
           id: "trident",
-          name: "トライデント",
+          name: "Trident",
           damage: 6,
           count: 3,
           type: "pierce",

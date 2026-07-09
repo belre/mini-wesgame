@@ -20,7 +20,7 @@ describe("マップデータ(JSON)のロード", () => {
 
   it("マッチ作成画面用の名前と説明文を持つ", () => {
     const map = mapById("valley_crossing");
-    expect(map.name).toBe("デバッグマップ");
+    expect(map.name).toBe("Debug Map");
     expect(map.description).toBeTruthy();
     expect(VALLEY_CROSSING).toBe(map);
   });

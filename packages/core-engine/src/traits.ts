@@ -6,45 +6,45 @@ import type { AttackSpecial, Rng, TraitId, UnitAbility, UnitDef } from "./types"
 // combat.ts / engine.ts が traits 配列を直接見る。
 
 export const TRAIT_NAMES: Record<TraitId, string> = {
-  strong: "強力",
-  intelligent: "知的",
-  quick: "敏捷",
-  resilient: "頑強",
-  dextrous: "器用",
-  fearless: "勇敢",
-  dim: "凡愚",
-  slow: "鈍重",
-  weak: "非力",
-  undead: "アンデッド",
-  healthy: "壮健",
-  feral: "野生",
-  no_zoc: "小物",
+  strong: "Strong",
+  intelligent: "Intelligent",
+  quick: "Quick",
+  resilient: "Resilient",
+  dextrous: "Dextrous",
+  fearless: "Fearless",
+  dim: "Dim",
+  slow: "Slow",
+  weak: "Weak",
+  undead: "Undead",
+  healthy: "Healthy",
+  feral: "Feral",
+  no_zoc: "Puny",
 };
 
 export const SPECIAL_NAMES: Record<AttackSpecial, string> = {
-  backstab: "奇襲",
-  berserk: "狂戦",
-  charge: "突撃",
-  drain: "生命吸収",
-  firststrike: "先制",
-  magical: "魔法",
-  marksman: "精密",
-  plague: "疫病",
-  poison: "毒",
-  poison_sting: "毒針",
-  slow: "遅化",
+  backstab: "Backstab",
+  berserk: "Berserk",
+  charge: "Charge",
+  drain: "Drain",
+  firststrike: "First Strike",
+  magical: "Magical",
+  marksman: "Marksman",
+  plague: "Plague",
+  poison: "Poison",
+  poison_sting: "Poison Sting",
+  slow: "Slows",
 };
 
 export const ABILITY_NAMES: Record<UnitAbility, string> = {
-  ambush: "伏兵",
-  submerge: "潜水",
-  cures: "治癒",
-  heals4: "回復+4",
-  heals8: "回復+8",
-  leadership: "統率",
-  regenerates: "再生",
-  skirmisher: "すり抜け", // 2026-07-08 ユーザー指定: 「散兵」は兵科名で効果(ZOC無視)が伝わりにくいため改名(id不変)
-  steadfast: "装甲",
+  ambush: "Ambush",
+  submerge: "Submerge",
+  cures: "Cures",
+  heals4: "Heals +4",
+  heals8: "Heals +8",
+  leadership: "Leadership",
+  regenerates: "Regenerates",
+  skirmisher: "Skirmisher", // 2026-07-08 ユーザー指定: 「散兵」は兵科名で効果(ZOC無視)が伝わりにくいため改名(id不変)
+  steadfast: "Steadfast",
 };
 
 export function hasAbility(def: UnitDef, ability: UnitAbility): boolean {

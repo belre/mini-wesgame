@@ -20,7 +20,6 @@ export function TerrainObjectBillboard({
   hexX,
   hexY,
   hexOccupied,
-  tilted,
   revealBehind,
   ownerIndex,
 }: {
@@ -29,7 +28,6 @@ export function TerrainObjectBillboard({
   hexX: number;
   hexY: number;
   hexOccupied: boolean;
-  tilted: boolean;
   // 真後ろのヘックスが行動対象(移動先等)の間、立体物を薄くして狙い所を見せる。
   // fadeModeとは独立の操作性向け条件(fadeMode: neverの岩にも掛かる)
   revealBehind?: boolean;
@@ -56,7 +54,7 @@ export function TerrainObjectBillboard({
       width={sz.w}
       height={sz.h}
       transform={flip ? "scale(-1 1)" : undefined}
-      opacity={objectOpacity(obj, { hexOccupied, tilted, revealBehind })}
+      opacity={objectOpacity(obj, { hexOccupied, revealBehind })}
       style={{ imageRendering: "pixelated" }}
       pointerEvents="none"
     />

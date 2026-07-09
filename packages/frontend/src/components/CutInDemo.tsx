@@ -106,8 +106,6 @@ export default function CutInDemo() {
   const [attackIndex, setAttackIndex] = useState(0);
   const [dir, setDir] = useState(0); // ATTACKER_CHOICESのindex
   const [holdMs, setHoldMs] = useState(1200);
-  const [tilted, setTilted] = useState(false); // 平面版と傾き版の見栄え比較用
-  const [viewFlipped, setViewFlipped] = useState(false); // 青視点(180度回転)の検証用
   const [seed, setSeed] = useState(0);
 
   const attackerDef = getUnitDef(attackerId);
@@ -219,17 +217,6 @@ export default function CutInDemo() {
             onChange={(e) => setHoldMs(Number(e.target.value))}
           />
         </label>
-        <button onClick={() => setTilted((v) => !v)}>
-          ステージ: {tilted ? "傾き(3D風)" : "平面"}
-        </button>
-        <label style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-          <input
-            type="checkbox"
-            checked={viewFlipped}
-            onChange={(e) => setViewFlipped(e.target.checked)}
-          />
-          視点反転(青視点)
-        </label>
         <button className="primary" onClick={play}>
           ⚔ 再生
         </button>
@@ -249,8 +236,6 @@ export default function CutInDemo() {
           map={MAP}
           fx={current ? fx : held?.fx ?? fx}
           current={current ?? held?.input ?? null}
-          tilted={tilted}
-          viewFlipped={viewFlipped}
           myIndex={0}
           timeOfDay={TIME_OF_DAY_DEFS.dawn}
         />

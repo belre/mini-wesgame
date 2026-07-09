@@ -1,4 +1,9 @@
-// 盤面の傾き(3D風)表示の投影計算。/dev/sprites で検証したモデルの共有版。
+// 盤面の傾き(3D風)表示の投影計算。
+//
+// mini-wesgame(2026-07-09): 実際の盤面(HexGrid/BoardScreen/CutInStage)は平面固定に
+// なり、この投影は使っていない。このファイルは /dev/sprites(SpriteAnimDemo.tsx)の
+// 傾き見栄え検証ツール専用として残す(TiltStage.tsxとセットで、下記の計算式を
+// JS/CSS両側で再現する仕組み自体はそのまま)。
 //
 // 方式: 地形(polygon)はCSSの3D transform(perspective+rotateX、さらに平面rotate)だけで
 // 傾け、hex.ts相当の座標計算は一切変えない。スプライト・文字まで一緒に傾けると見た目が
@@ -11,22 +16,9 @@ export const TILT_RAD = (TILT_DEG * Math.PI) / 180;
 export const PERSPECTIVE_PX = 1000;
 export const TILT_TRANSFORM = `rotateX(${TILT_DEG}deg)`;
 
-// 本番採用値(/dev/sprites のスライダーで調整して決定。2026-07-06):
-// - 右斜め方向の平面回転: 10deg(当初15degだったが、プレイ評価で「少し強すぎる」となり緩和)
-// - 足元の食い込み: -0.45×S(スプライトの足をヘックス境界に馴染ませる)
-// - 上下位置の補正: 0px(補正なし)
+// /dev/sprites のスライダー初期値(2026-07-06に本番採用していた値の名残)。
+// 右斜め方向の平面回転のデフォルト
 export const BOARD_DIAGONAL_DEG = 10;
-
-// ビュー変換: 「自陣を背にして戦場を見る」構図にするため、視点の陣営によって
-// 盤面全体を180度回転(盤面中心の点対称)して描画する。論理座標(hex.ts)は不変で、
-// 変換はHexGridの描画境界にだけ適用される(クリックは論理座標のまま)。
-// 現行マップはkeep走査順=プレイヤー順でP0の陣地が盤面上側に来るため、
-// P0(青)視点で反転する(反転により自陣が手前=カメラ側に来る)
-export function boardViewFlippedFor(viewerIndex: number): boolean {
-  return viewerIndex === 0;
-}
-export const BOARD_FOOT_OFFSET_RATIO = -0.45;
-export const BOARD_TILT_Y_OFFSET_PX = 0;
 
 // tilted=falseならそのまま返す(scale=1)。trueならCSSのrotateX+perspective、続けて
 // 2D回転(diagonalDeg)と同じ投影を計算し、「transformOrigin: center center」を基準にした

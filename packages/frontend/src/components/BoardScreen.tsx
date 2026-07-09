@@ -41,14 +41,10 @@ import {
 } from "@parle-stroika/core-engine";
 import { useCombatAnimations, type CombatPlaybackInput } from "@/hooks/useCombatAnimations";
 import { useMatchAssets } from "@/hooks/useMatchAssets";
-import { useScreenPanZoom } from "@/hooks/useScreenPanZoom";
-import { useViewFlip } from "@/hooks/useViewFlip";
-import { BOARD_DIAGONAL_DEG, projectTilt } from "@/lib/tilt";
 import { useMoveAnimations } from "@/hooks/useMoveAnimations";
 import CombatPreviewPanel from "./CombatPreviewPanel";
 import HexGrid from "./HexGrid";
-import { backNeighborOf, boardPixelSize, hexCenter, HEX_WIDTH_PX } from "@/lib/board/geometry";
-import { TOD_FX } from "@/lib/board/timeOfDayFx";
+import { backNeighborOf, HEX_WIDTH_PX } from "@/lib/board/geometry";
 import { LoadingScreen } from "./LoadingScreen";
 import RecruitSheet from "./RecruitSheet";
 
@@ -67,16 +63,11 @@ type UiMode =
 
 const EMPTY_SET: ReadonlySet<string> = new Set();
 
-// 傾け盤面のカメラdivのpadding(初期カメラ計算が盤面上端位置として参照する)
-const CAMERA_PADDING_PX = 24;
-
 // ユニット選択の巡回救済(2026-07-08): 縦列(同じx)でユニットのスプライトが上下に
 // 重なると、常に手前のユニットがタップを奪ってしまい奥のユニットを選びづらい。
 // 直前タップとほぼ同じ画面位置への連続タップは「奥へフォーカスを移したい合図」とみなす。
 // 暫定値(タッチ誤差程度を想定。要調整)
 const SAME_TAP_RADIUS_PX = 16;
-
-const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 
 // SSR時はuseLayoutEffectがno-op警告を出すためuseEffectにフォールバックする
 // (このコンポーネントはクライアント専用だが、初回HTMLはServer Componentの
@@ -113,7 +104,7 @@ export default function BoardScreen({
   children?: ReactNode;
 }) {
   const t = useTranslations("Board");
-  // 時間帯の表示名(id→翻訳キーの対応。TOD_FX/timeOfDayForTurnのid一覧と揃える)
+  // 時間帯の表示名(id→翻訳キーの対応。timeOfDayForTurnのid一覧と揃える)
   const TOD_LABEL: Record<string, string> = {
     dawn: t("todDawn"),
     morning: t("todMorning"),
@@ -154,46 +145,6 @@ export default function BoardScreen({
   const [dpr, setDpr] = useState(1);
   useEffect(() => setDpr(window.devicePixelRatio), []);
 
-  // 盤面の傾き(3D風)表示。既定ON、localStorageで永続化
-  const [tilted, setTilted] = useState(true);
-  useEffect(() => {
-    if (localStorage.getItem("ps_board_tilted") === "0") setTilted(false);
-  }, []);
-  const toggleTilted = () => {
-    setTilted((prev) => {
-      localStorage.setItem("ps_board_tilted", prev ? "0" : "1");
-      return !prev;
-    });
-  };
-  // ビュー反転: 自陣を背にして戦場を見る構図(青視点は盤面を180度回す)。
-  // ユーザー設定でON/OFF可能(トグルはtopbar。カットインも同じ値に追従する)
-  const { viewFlipped, toggleViewFlip } = useViewFlip(myIndex);
-  // 傾け時のカメラ操作(スクリーン空間のパン/ズーム)。2Dはreact-zoom-pan-pinchのまま。
-  // 初期カメラは自軍リーダー(開幕は主城の上)が画面内に入る位置へ寄せる — 盤面882pxを
-  // スマホ幅に中央寄せすると自陣(ビュー反転で手前側=盤面端)が画面外になるため。
-  // 盤面が画面より大きい軸だけ動かし、盤面の端が画面内へ食い込まない範囲にクランプする
-  const panZoom = useScreenPanZoom(tilted, (container) => {
-    const leader = board.units.find((u) => u.owner === myIndex && u.isLeader);
-    if (!leader) return { x: 0, y: 0, scale: 1 };
-    const { width: W, height: H } = boardPixelSize(mapById(board.mapId));
-    const raw = hexCenter(leader.pos);
-    const flipped = viewFlipped ? { cx: W - raw.cx, cy: H - raw.cy } : raw;
-    // HexGridのビルボード投影と同じ変換でリーダーの描画位置(盤面px)を求める
-    const p = projectTilt(flipped, { cx: W / 2, cy: H / 2 }, true, BOARD_DIAGONAL_DEG);
-    // 盤面divはカメラdiv内で水平中央寄せ(左端=(vw-W)/2)、上端はpadding位置にある
-    const desiredX = W / 2 - p.cx; // リーダーを画面水平中央へ
-    const desiredY = container.height / 2 - (CAMERA_PADDING_PX + p.cy);
-    return {
-      x: W > container.width
-        ? clamp(desiredX, (container.width - W) / 2, (W - container.width) / 2)
-        : 0,
-      y: H > container.height
-        ? clamp(desiredY, container.height - H - CAMERA_PADDING_PX, -CAMERA_PADDING_PX)
-        : 0,
-      scale: 1,
-    };
-    // 盤面の向きが変わったら座標系ごと変わるので初期カメラを取り直す
-  }, viewFlipped);
   // CPUの手(extraEvents)用の実経路/戦闘登録。自分の手はsubmit内で送信前スナップショットを
   // 使って直接再生する(盤面の更新タイミングに左右されないようにするため)ので、
   // ここは「イベントが取れない相手の手」の直線スライドフォールバックと、CPUの手の演出に使う
@@ -375,7 +326,7 @@ export default function BoardScreen({
 
   // 縦列の奥隣ヘックス判定(lib/board/geometry.ts。ユニット巡回選択・敵の背後移動で共有)
   const backNeighborOfHere = (anchor: HexCoord): HexCoord | null =>
-    backNeighborOf(map, viewFlipped, tilted, anchor);
+    backNeighborOf(map, anchor);
 
   const selectedUnit: UnitState | null = useMemo(() => {
     const unitId =
@@ -720,27 +671,24 @@ export default function BoardScreen({
             .map((p) => `${p.userId}[${getFaction(p.factionId).name}]`)
             .join(" vs ")}
         </span>
-        <button
-          onClick={toggleTilted}
-          style={{ fontSize: 12, padding: "2px 8px" }}
-          title={t("tiltTitle")}
-        >
-          {tilted ? t("toggle2d") : t("toggle3d")}
-        </button>
-        <button
-          onClick={toggleViewFlip}
-          style={{ fontSize: 12, padding: "2px 8px" }}
-          title={t("flipTitle")}
-        >
-          {t("flipLabel")}
-        </button>
       </div>
 
       {banner}
 
       <div className="board-wrap">
-        {(() => {
-          const grid = (
+        {/* パン&ズーム(1本指パン・2本指ピンチ・ホイール)のラップ範囲はSVGのみ(計画書3.4) */}
+        <TransformWrapper
+          minScale={0.4}
+          maxScale={3}
+          limitToBounds={false}
+          centerOnInit
+          doubleClick={{ disabled: true }}
+          onTransformed={(_, state) => setZoom2d(state.scale)}
+        >
+          <TransformComponent
+            wrapperStyle={{ width: "100%", height: "100%" }}
+            contentStyle={{ padding: 24 }}
+          >
             <HexGrid
               map={map}
               units={board.units}
@@ -757,104 +705,15 @@ export default function BoardScreen({
               guideHexes={guideHexes}
               animatedPositions={mergedPositions}
               combatFx={combatFx}
-              tilted={tilted}
-              viewFlipped={viewFlipped}
-              // ドラッグ/ピンチ直後のclickは操作ではないので無視する(傾け時のみ独自カメラ)
-              onHexClick={(c, screenPos) => {
-                if (tilted && panZoom.didDragRef.current) return;
-                onHexClick(c, screenPos);
-              }}
+              onHexClick={onHexClick}
             />
-          );
-          if (tilted) {
-            // 傾け時: スクリーン空間のパン/ズーム(1本指パン・2本指ピンチ・ホイール)。
-            // touch-action: none でページスクロールへの横取りを防ぐ
-            return (
-              <div
-                ref={panZoom.containerRef}
-                {...panZoom.handlers}
-                data-testid="board-viewport"
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  overflow: "hidden",
-                  touchAction: "none",
-                  cursor: "grab",
-                  position: "relative",
-                  filter: TOD_FX[tod.id]?.filter,
-                }}
-              >
-                {/* skybox(A-7): 非描画領域の背景。カメラの1/4だけ動くパララックス
-                    (CSS静止画方式。three.js/WebGLは使わない — backlog A-7の技術方針)。
-                    時間帯(tod)でday/dusk/night版に切り替わる。画像が未配置でも
-                    グラデーションの空がフォールバックとして敷かれる */}
-                <div
-                  aria-hidden
-                  style={{
-                    position: "absolute",
-                    inset: "-30%",
-                    backgroundImage: `linear-gradient(to bottom, #101722 0%, #1a2636 55%, #243347 75%, #101722 100%)`,
-                    backgroundSize: "cover",
-                    backgroundPosition: "center 40%",
-                    transform: `translate(${panZoom.view.x * 0.25}px, ${panZoom.view.y * 0.25}px)`,
-                    pointerEvents: "none",
-                  }}
-                />
-                <div
-                  data-testid="board-camera"
-                  style={{
-                    display: "flex",
-                    justifyContent: "center",
-                    padding: CAMERA_PADDING_PX,
-                    transform: `translate(${panZoom.view.x}px, ${panZoom.view.y}px) scale(${panZoom.view.scale})`,
-                    transformOrigin: "center center",
-                    position: "relative",
-                  }}
-                >
-                  {grid}
-                </div>
-                {/* 時間帯の色被せ(multiply)。夕=橙、夜=青。スプライトの可読性は
-                    /dev/terrainの夜プリセット検証で確認済み */}
-                {TOD_FX[tod.id]?.overlay && (
-                  <div
-                    aria-hidden
-                    style={{
-                      position: "absolute",
-                      inset: 0,
-                      background: TOD_FX[tod.id].overlay,
-                      mixBlendMode: "multiply",
-                      pointerEvents: "none",
-                    }}
-                  />
-                )}
-              </div>
-            );
-          }
-          // 2D時: 従来どおりreact-zoom-pan-pinch(パン&ズームのラップ範囲はSVGのみ。計画書3.4)
-          return (
-            <TransformWrapper
-              minScale={0.4}
-              maxScale={3}
-              limitToBounds={false}
-              centerOnInit
-              doubleClick={{ disabled: true }}
-              onTransformed={(_, state) => setZoom2d(state.scale)}
-            >
-              <TransformComponent
-                wrapperStyle={{ width: "100%", height: "100%" }}
-                contentStyle={{ padding: 24 }}
-              >
-                {grid}
-              </TransformComponent>
-            </TransformWrapper>
-          );
-        })()}
+          </TransformComponent>
+        </TransformWrapper>
 
         {/* 推定hexサイズの計測表示: ズーム調整・アセット解像度チューニングの指標。
-            盤面中央基準の概算(傾け時は奥ほど小さく、縦はさらにcos55°≈0.57倍に圧縮される)。
             物理px÷72(素材の原寸)がドット絵の引き伸ばし倍率 */}
         {(() => {
-          const hexPx = HEX_WIDTH_PX * (tilted ? panZoom.view.scale : zoom2d);
+          const hexPx = HEX_WIDTH_PX * zoom2d;
           return (
             <div
               data-testid="hex-size-readout"
@@ -1126,10 +985,10 @@ function UnitInfoPanel({
             </span>
           )}
           {unit.poisoned && (
-            <span style={{ color: "#8ee08e", marginLeft: 6, fontSize: 12 }}>☠毒</span>
+            <span style={{ color: "#8ee08e", marginLeft: 6, fontSize: 12 }}>☠Poison</span>
           )}
           {unit.slowed && (
-            <span style={{ color: "#c9a6e0", marginLeft: 6, fontSize: 12 }}>🐌遅化</span>
+            <span style={{ color: "#c9a6e0", marginLeft: 6, fontSize: 12 }}>🐌Slowed</span>
           )}
         </strong>
         <div className="row">

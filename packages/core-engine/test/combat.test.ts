@@ -274,10 +274,10 @@ describe("chooseRetaliation", () => {
   });
 
   it("同レンジで期待ダメージ最大の攻撃を選ぶ", () => {
-    const lieutenant = getUnitDef("lieutenant"); // 剣8x3 / クロスボウ6x3
+    const lieutenant = getUnitDef("lieutenant"); // Sword 8x3 / Crossbow 6x3
     const grunt = getUnitDef("orcish_grunt");
     const melee = chooseRetaliation(lieutenant, grunt, "melee", TIME_OF_DAY_DEFS.dawn);
-    expect(melee?.attack.name).toBe("剣");
+    expect(melee?.attack.name).toBe("Sword");
   });
 });
 

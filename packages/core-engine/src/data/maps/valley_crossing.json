@@ -1,7 +1,7 @@
 {
   "id": "valley_crossing",
-  "name": "デバッグマップ",
-  "description": "開発検証用の16×12マップ。中央を流れる川(浅瀬・深海)を挟んで両軍の城が対角に向かい合う。村は6つ、渡河点の確保と森・丘の防御地形の使い方が鍵。深海は潜水ユニットの隠れ場所になる。",
+  "name": "Debug Map",
+  "description": "A 16x12 map for development testing. Both sides' camps face off diagonally across a river (shallows and deep water) splitting the map. It has 6 supply points — controlling the river crossings and using forest/hill terrain for defense is key. Deep water gives submerging units a place to hide.",
   "width": 16,
   "height": 12,
   "tiles": [

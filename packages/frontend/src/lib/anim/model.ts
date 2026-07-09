@@ -112,9 +112,8 @@ export interface TerrainObjectDef {
   mirror?: boolean;
   // 可読性フェードの発動条件(occludes=trueのとき有効。2026-07-07 実地検証):
   //  always(既定) = 常時。大きな塊はユニットが隠れ切るため
-  //  tilted = 傾き表示のみ。小塊は平面でフェードすると自分が消えて見えるため
   //  never = フェードしない
-  fadeMode?: "always" | "tilted" | "never";
+  fadeMode?: "always" | "never";
   // 陣営でバリアントを選ぶ(2026-07-08 旗の色分け)。true のとき srcs は
   // [プレイヤー0用, プレイヤー1用] とみなし、座標ハッシュではなくヘックスの
   // 帰属(keepの走査順割当=エンジンの初期化規則と同一。レンダラー側で解決)で選ぶ

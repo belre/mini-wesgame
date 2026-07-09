@@ -207,15 +207,6 @@ export default function HexGrid({
               transitions={transitions}
               groundOverride={devTerrainGround?.[terrainId]}
             />
-            {/* ヘックスのグリッド線(本家Wesnoth準拠: 対戦画面でも常時薄く表示)。
-                地形画像レイヤーの上・ユニット/ハイライトの下に重ねる */}
-            <polygon
-              points={hexPointsAt({ cx, cy })}
-              fill="none"
-              stroke="rgba(255,255,255,0.15)"
-              strokeWidth={1}
-              pointerEvents="none"
-            />
             {/* 補給拠点の領有: 所有者の色で縁取り(平面=作戦図モードの補助。
                 主表示は陣営色の小旗ビルボード)。地形の記号マーク(♣⌂▲🚩)は
                 2026-07-08 廃止 — 樹冠・テント・岩塊・旗の実体が立った時点で二重表示 */}

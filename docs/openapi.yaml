@@ -1,0 +1,328 @@
+# Parle-Stroika 対戦API(非同期PvP)のOpenAPI仕様。
+# 実装の正: packages/backend/src/handler.ts(ルーティング)/ repo.ts(永続化)。
+# ルールの検証はクライアントと同じ core-engine の applyAction をサーバーでも実行する。
+# 注意: MatchState / GameEvent / TurnLogEntry の完全な型は
+# packages/core-engine/src/types.ts が原典(ここでは主要フィールドのみ記載)。
+openapi: 3.0.3
+info:
+  title: Parle-Stroika Match API
+  version: 0.1.0
+  description: |
+    非同期ターン制ウォーゲームの対戦API。
+    - 認証は開発用の簡易方式: `x-user-id` ヘッダ(Keycloak/OIDC差し替え予定 — backlog C)
+    - 盤面は常に `filterStateForViewer()` で閲覧者視点にフィルタされて返る(伏兵・霧の情報隠蔽)
+    - アクション送信は `actionId` による冪等性つき(同じactionIdの再送は `duplicate: true`)
+    - CPU戦(チュートリアル)はこのAPIを使わずクライアント内で完結する
+servers:
+  - url: http://localhost:3010/api
+    description: ローカル開発(Next.jsのAPIルート経由。DynamoDB Local必須)
+  - url: https://{apiGatewayId}.execute-api.{region}.amazonaws.com
+    description: 本番(API Gateway HTTP API。CDK出力を参照)
+    variables:
+      apiGatewayId: { default: xxxxxxxx }
+      region: { default: ap-northeast-1 }
+security:
+  - devUserId: []
+
+paths:
+  /health:
+    get:
+      summary: 死活監視(認証不要)
+      security: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { type: object, properties: { ok: { type: boolean } } }
+
+  /me/matches:
+    get:
+      summary: 自分の進行中マッチ一覧(直近アクティビティ順)
+      responses:
+        "200":
+          description: 一覧
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  matches:
+                    type: array
+                    items: { $ref: "#/components/schemas/MembershipSummary" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /matches:
+    post:
+      summary: マッチ作成(対戦相手の参加待ち)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [factionId]
+              properties:
+                factionId: { type: string, example: loyalists }
+                mapId: { type: string, default: valley_crossing }
+                leaderUnitId:
+                  type: string
+                  description: リーダーユニットID(省略時は陣営の既定。Lv2以上・自陣営のみ)
+                fog: { type: boolean, default: false, description: 霧(視界外の敵を隠す) }
+      responses:
+        "201":
+          description: 作成済み(status=waiting)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  meta: { $ref: "#/components/schemas/MatchMeta" }
+        "400": { $ref: "#/components/responses/EngineError" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /matches/{matchId}:
+    get:
+      summary: マッチのメタ+最新盤面(閲覧者視点)
+      parameters: [{ $ref: "#/components/parameters/matchId" }]
+      responses:
+        "200":
+          description: 参加者のみ取得可
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  meta: { $ref: "#/components/schemas/MatchMeta" }
+                  state:
+                    { $ref: "#/components/schemas/MatchState", nullable: true }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /matches/{matchId}/log:
+    get:
+      summary: ターンログ(相手ターンの索敵・被攻撃の後追い確認)
+      parameters:
+        - { $ref: "#/components/parameters/matchId" }
+        - name: sinceVersion
+          in: query
+          required: true
+          schema: { type: integer, minimum: 0 }
+          description: このturnVersionより後のエントリを返す(差分取得)
+      responses:
+        "200":
+          description: 閲覧者視点にフィルタ済みのログ
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entries:
+                    type: array
+                    items: { $ref: "#/components/schemas/TurnLogEntry" }
+        "400": { $ref: "#/components/responses/EngineError" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /matches/{matchId}/join:
+    post:
+      summary: マッチ参加(2人目)。初期盤面が生成されactiveになる
+      parameters: [{ $ref: "#/components/parameters/matchId" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [factionId]
+              properties:
+                factionId: { type: string }
+                leaderUnitId: { type: string }
+      responses:
+        "200":
+          description: 参加成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  meta: { $ref: "#/components/schemas/MatchMeta" }
+                  state: { $ref: "#/components/schemas/MatchState" }
+        "400": { $ref: "#/components/responses/EngineError" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409":
+          description: 参加不可(already_joined / match_not_joinable)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /matches/{matchId}/actions:
+    post:
+      summary: アクション送信(冪等)
+      description: |
+        サーバーは core-engine の applyAction で検証・確定する(ルール違反=400)。
+        書き込みは「最新盤面の更新+ターン履歴+冪等キー」をトランザクションで原子化。
+        乱数(命中判定)はサーバー側で確定し、結果は events として返る。
+      parameters: [{ $ref: "#/components/parameters/matchId" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [actionId, action]
+              properties:
+                actionId:
+                  type: string
+                  description: クライアント生成の冪等性キー(UUID推奨。TTL24h)
+                action: { $ref: "#/components/schemas/Action" }
+      responses:
+        "200":
+          description: 確定済み(duplicate=trueなら過去の同一送信の再応答)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  state: { $ref: "#/components/schemas/MatchState" }
+                  events:
+                    type: array
+                    items: { $ref: "#/components/schemas/GameEvent" }
+                  duplicate: { type: boolean }
+        "400": { $ref: "#/components/responses/EngineError" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409":
+          description: version_conflict(楽観的ロック競合。再取得してリトライ)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+components:
+  securitySchemes:
+    devUserId:
+      type: apiKey
+      in: header
+      name: x-user-id
+      description: 開発用の簡易認証(ユーザーID直渡し)。OIDC化はbacklog C
+  parameters:
+    matchId:
+      name: matchId
+      in: path
+      required: true
+      schema: { type: string }
+  responses:
+    Unauthorized:
+      description: x-user-id ヘッダなし
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Forbidden:
+      description: このマッチの参加者ではない
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    NotFound:
+      description: match_not_found
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    EngineError:
+      description: ルール違反・不正な入力(EngineError.code入り)
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+  schemas:
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          description: |
+            EngineError(invalid_faction / invalid_map / invalid_body / ルール違反系)
+            または RepoError(match_not_found / match_not_joinable / already_joined /
+            version_conflict / invalid_since_version)
+        message: { type: string }
+    MatchMeta:
+      type: object
+      properties:
+        matchId: { type: string }
+        status: { type: string, enum: [waiting, active, finished] }
+        mapId: { type: string }
+        fog: { type: boolean }
+        players:
+          type: array
+          items:
+            type: object
+            properties:
+              userId: { type: string }
+              factionId: { type: string }
+              leaderUnitId: { type: string }
+        createdAt: { type: string, format: date-time }
+    MembershipSummary:
+      type: object
+      properties:
+        matchId: { type: string }
+        matchStatus: { type: string, enum: [waiting, active, finished] }
+        mapId: { type: string }
+        factionId: { type: string }
+        opponentUserId: { type: string, nullable: true }
+        activePlayerUserId: { type: string, nullable: true }
+    Action:
+      description: 型の原典は core-engine/src/types.ts の Action union
+      oneOf:
+        - type: object
+          required: [type, unitId, target]
+          properties:
+            type: { type: string, enum: [move] }
+            unitId: { type: string }
+            target: { $ref: "#/components/schemas/HexCoord" }
+        - type: object
+          required: [type, attackerId, defenderId, attackIndex]
+          properties:
+            type: { type: string, enum: [attack] }
+            attackerId: { type: string }
+            defenderId: { type: string }
+            attackIndex: { type: integer }
+        - type: object
+          required: [type, unitDefId, target]
+          properties:
+            type: { type: string, enum: [recruit] }
+            unitDefId: { type: string }
+            target: { $ref: "#/components/schemas/HexCoord" }
+        - type: object
+          required: [type, unitId, targetDefId]
+          properties:
+            type: { type: string, enum: [chooseLevelUp] }
+            unitId: { type: string }
+            targetDefId: { type: string }
+        - type: object
+          required: [type]
+          properties:
+            type: { type: string, enum: [endTurn] }
+        - type: object
+          required: [type]
+          properties:
+            type: { type: string, enum: [surrender] }
+    HexCoord:
+      type: object
+      required: [x, y]
+      properties:
+        x: { type: integer }
+        y: { type: integer }
+    MatchState:
+      type: object
+      description: |
+        盤面の全状態(閲覧者視点にフィルタ済み)。完全な型は core-engine/src/types.ts。
+        主要フィールド: mapId / turnNumber / activePlayer / players[](gold, factionId) /
+        units[](id, unitDefId, owner, pos, hp, movesLeft, traits, xp, isLeader...) /
+        villageOwners / turnVersion / status / winner
+      additionalProperties: true
+    GameEvent:
+      type: object
+      description: アクションの結果イベント列(moved / combat / recruited / levelUp / turnEnded 等)。型は core-engine/src/types.ts
+      additionalProperties: true
+    TurnLogEntry:
+      type: object
+      description: 相手ターンの後追い確認用ログ(閲覧者視点)。型は core-engine の computeTurnLog 参照
+      additionalProperties: true

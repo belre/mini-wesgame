@@ -1,0 +1,363 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg: #14181f;
+  --panel: #1e2530;
+  --panel-border: #313c4d;
+  --text: #e6e9ef;
+  --text-dim: #9aa5b5;
+  --accent: #4f8cff;
+  --danger: #e05252;
+  --gold: #e0b34f;
+}
+
+html,
+body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", Meiryo, system-ui,
+    sans-serif;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+button.danger {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
+
+input,
+select {
+  font: inherit;
+  color: var(--text);
+  background: #10141a;
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 24px 16px 64px;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.panel h2 {
+  font-size: 15px;
+  margin-bottom: 12px;
+  color: var(--text-dim);
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.match-list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  margin-bottom: 8px;
+  background: #171d26;
+}
+
+.badge {
+  font-size: 12px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--panel-border);
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.badge.your-turn {
+  background: var(--accent);
+  color: #fff;
+}
+
+.badge.finished {
+  background: #3d2f14;
+  color: var(--gold);
+}
+
+/* ---- 対戦盤面 ---- */
+
+.match-screen {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.match-topbar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--panel-border);
+  font-size: 13px;
+  flex-wrap: wrap;
+  z-index: 5;
+}
+
+.board-wrap {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  /* ピンチズームをライブラリに渡し、ブラウザ標準のページズームと競合させない */
+  touch-action: none;
+  background: #0c0f14;
+}
+
+.overlay-bottom {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sheet {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 14px 14px 0 0;
+  padding: 14px;
+  max-height: 45dvh;
+  overflow-y: auto;
+}
+
+.sheet h3 {
+  font-size: 14px;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+}
+
+.recruit-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  text-align: left;
+  margin-bottom: 6px;
+}
+
+.confirm-bar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  padding: 10px 14px;
+}
+
+.fab {
+  position: absolute;
+  right: 16px;
+  bottom: 88px;
+  z-index: 20;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  font-size: 22px;
+  line-height: 1;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+.fab-menu {
+  position: absolute;
+  right: 16px;
+  bottom: 148px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  padding: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+.toast {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 13px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  max-width: min(92vw, 480px);
+}
+
+.unit-panel {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 13px;
+}
+
+.attack-option {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  margin-bottom: 6px;
+}
+
+.dim {
+  color: var(--text-dim);
+}
+
+/* ユニット足元の行動状態リング(2026-07-08)。移動・戦闘演出のrequestAnimationFrame
+   パイプラインとは無関係の待機装飾ループなので、CSSのanimationだけで完結させる */
+@keyframes ps-turn-ring-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.turn-ring--ready {
+  animation: ps-turn-ring-spin 3s linear infinite;
+  transform-origin: 0px 0px;
+}
+
+/* 遅化: 行動状態リングの振動(2026-07-08)。回転(ellipse自身のtransform)とは別要素
+   (親<g>)のtransformを揺らすので、同じ要素に両方乗せて片方が上書きされる事故がない */
+@keyframes ps-turn-ring-shake {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(3px, -2.5px);
+  }
+  50% {
+    transform: translate(-3px, 2px);
+  }
+  75% {
+    transform: translate(2.5px, 3px);
+  }
+}
+
+.turn-ring-shake {
+  animation: ps-turn-ring-shake 0.1s linear infinite;
+  transform-origin: 0px 0px;
+}
+
+/* 毒: スプライト全体を緑系に色調補正する(本家Wesnothの毒表示に準拠。2026-07-08)。
+   sepia→hue-rotateで任意色に寄せる定石(sepiaの基準色相からの回転量で緑に着地させる) */
+.status-poison-tint {
+  filter: sepia(1) hue-rotate(80deg) saturate(4) brightness(0.9);
+}
+
+/* タップフィードバック(2026-07-09)。BoardScreen: 有効なユニットタップで選択/攻撃下書き/
+   移動下書き/巡回切り替えが実際に起きた瞬間だけ、タップ位置(clientX/Y)に一瞬リングを出す。
+   position: fixedなのでスクロール/パン/ズームに関わらずそのままビューポート座標で置ける。
+   選択中ユニットの白いリング(UnitBody)と同系色にして「選択の手応え」として統一感を出す */
+@keyframes ps-tap-fx {
+  from {
+    transform: translate(-50%, -50%) scale(0.5);
+    opacity: 0.85;
+  }
+  to {
+    transform: translate(-50%, -50%) scale(2.2);
+    opacity: 0;
+  }
+}
+
+.tap-fx {
+  position: fixed;
+  width: 28px;
+  height: 28px;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 40;
+  animation: ps-tap-fx 0.35s ease-out forwards;
+}
+
+/* カットインの統率ボーナス演出(2026-07-09)。恩恵を受ける攻撃側/防御側本人の背後で
+   金色の円がゆっくり呼吸するように拡縮・明滅する(CutInStage.tsx `.cutin-leadership-glow`) */
+@keyframes ps-cutin-leadership-glow {
+  0%,
+  100% {
+    opacity: 0.22;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.15);
+  }
+}
+
+.cutin-leadership-glow {
+  transform-origin: 0px 0px;
+  animation: ps-cutin-leadership-glow 1.1s ease-in-out infinite;
+}

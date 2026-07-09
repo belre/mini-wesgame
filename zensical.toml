@@ -1,0 +1,31 @@
+# ドキュメントサイト(Zensical。Material for MkDocs後継)の設定。
+# 使い方: uvx zensical serve  (http://localhost:8000)
+#         uvx zensical build  (site/ に静的サイト生成。site/はgitignore)
+# ソースは docs/ 配下のMarkdown。入口は docs/index.md(人間用の設計ドキュメント)
+
+[project]
+site_name = "Parle-Stroika 設計ドキュメント"
+site_description = "非同期ターン制ウォーゲーム(Wesnoth系ルール×サバゲーフィールドのミニチュア)の設計ドキュメント"
+copyright = ""
+
+nav = [
+  { "全体像(はじめに)" = "index.md" },
+  { "アーキテクチャ" = "architecture.md" },
+  { "計画書" = "project_direction.md" },
+  { "設計哲学の系譜" = "design_philosophy.md" },
+  { "盤面ビジュアル(ジオラマ)" = "design_diorama.md" },
+  { "アセットパイプライン" = "design/diorama_pipeline.md" },
+  { "画像配信(スプライトパック)" = "asset_delivery.md" },
+  { "スプライトガイド(GPL)" = "sprite_guide.md" },
+  { "ローカル開発ガイド" = "local_dev_guide.md" },
+  { "バックログ" = "backlog.md" },
+]
+
+[project.theme]
+language = "ja"
+features = [
+  "navigation.sections",
+  "navigation.top",
+  "search.highlight",
+  "content.code.copy",
+]

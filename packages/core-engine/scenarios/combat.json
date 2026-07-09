@@ -1,0 +1,148 @@
+{
+  "description": "戦闘予測・命中率シナリオ集",
+  "scenarios": [
+    {
+      "id": "spearman_vs_corpse_dawn",
+      "description": "槍兵が歩く死体を攻撃 (dawn / 草原同士)",
+      "type": "combat_prediction",
+      "input": {
+        "attackerDefId": "spearman",
+        "defenderDefId": "walking_corpse",
+        "attackIndex": 0,
+        "attackerTerrainId": "grassland",
+        "defenderTerrainId": "grassland",
+        "timeOfDayId": "dawn"
+      },
+      "expect": {
+        "hitChance": 0.6,
+        "damagePerStrike": 7,
+        "strikes": 3,
+        "retaliation": {
+          "damagePerStrike": 4,
+          "strikes": 3
+        }
+      }
+    },
+    {
+      "id": "horseman_charge_vs_grunt_dawn",
+      "description": "騎兵ランス(突撃)がオークの戦士を攻撃 — 9×2=18、反撃blade×2=18にhorseman耐性20%で14",
+      "type": "combat_prediction",
+      "input": {
+        "attackerDefId": "horseman",
+        "defenderDefId": "orcish_grunt",
+        "attackIndex": 0,
+        "attackerTerrainId": "grassland",
+        "defenderTerrainId": "grassland",
+        "timeOfDayId": "dawn"
+      },
+      "expect": {
+        "hitChance": 0.6,
+        "damagePerStrike": 18,
+        "strikes": 2,
+        "retaliation": {
+          "damagePerStrike": 14,
+          "strikes": 2
+        }
+      }
+    },
+    {
+      "id": "mage_magical_vs_spearman_forest",
+      "description": "魔術師のスパーク(magical)は森の防御率50%を無視して命中率70%固定",
+      "type": "combat_prediction",
+      "input": {
+        "attackerDefId": "mage",
+        "defenderDefId": "spearman",
+        "attackIndex": 1,
+        "attackerTerrainId": "grassland",
+        "defenderTerrainId": "forest",
+        "timeOfDayId": "dawn"
+      },
+      "expect": {
+        "hitChance": 0.7,
+        "damagePerStrike": 7,
+        "strikes": 3
+      }
+    },
+    {
+      "id": "bowman_ranged_vs_skeleton_no_retaliation",
+      "description": "弓兵の遠隔攻撃に対してスケルトンは遠隔手段がなく反撃できない",
+      "type": "combat_prediction",
+      "input": {
+        "attackerDefId": "bowman",
+        "defenderDefId": "skeleton",
+        "attackIndex": 1,
+        "attackerTerrainId": "grassland",
+        "defenderTerrainId": "grassland",
+        "timeOfDayId": "dawn"
+      },
+      "expect": {
+        "retaliation": null
+      }
+    },
+    {
+      "id": "cavalry_defense_forest",
+      "description": "cavalrymanはcavalry防御タイプ(30%)が適用 — walkなら60%のところ命中率70%",
+      "type": "hit_chance",
+      "input": {
+        "defenderDefId": "cavalryman",
+        "defenderTerrainId": "forest"
+      },
+      "expect": 0.7
+    },
+    {
+      "id": "walk_defense_forest_reference",
+      "description": "walk歩兵の森防御率50%(2026-07-08 本家準拠に整理) → 命中率50%(cavalryと比較用)",
+      "type": "hit_chance",
+      "input": {
+        "defenseType": "walk",
+        "defenderTerrainId": "forest"
+      },
+      "expect": 0.5
+    },
+    {
+      "id": "swim_defense_shallow_water",
+      "description": "水棲ユニットは浅瀬で防御率60% → 命中率40%",
+      "type": "hit_chance",
+      "input": {
+        "defenseType": "swim",
+        "defenderTerrainId": "shallow_water"
+      },
+      "expect": 0.4
+    },
+    {
+      "id": "walk_in_village_feral",
+      "description": "野生(feral)特性: 村のwalk防御率60%が50%に制限 → 命中率50%",
+      "type": "hit_chance",
+      "input": {
+        "defenseType": "walk",
+        "defenderTerrainId": "village",
+        "defenderTraits": ["feral"]
+      },
+      "expect": 0.5
+    },
+    {
+      "id": "error_unknown_terrain",
+      "description": "存在しない地形IDを指定するとエラーになる(voidは2026-07-08に実在の地形になったため差し替え)",
+      "type": "hit_chance",
+      "input": {
+        "defenseType": "walk",
+        "defenderTerrainId": "phantom_terrain"
+      },
+      "expectError": "unknown terrain: phantom_terrain"
+    },
+    {
+      "id": "error_unknown_unit",
+      "description": "存在しないユニットIDを指定するとエラーになる",
+      "type": "combat_prediction",
+      "input": {
+        "attackerDefId": "ghost_king",
+        "defenderDefId": "spearman",
+        "attackIndex": 0,
+        "attackerTerrainId": "grassland",
+        "defenderTerrainId": "grassland",
+        "timeOfDayId": "dawn"
+      },
+      "expectError": "unknown unit def: ghost_king"
+    }
+  ]
+}

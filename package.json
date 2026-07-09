@@ -1,0 +1,17 @@
+{
+  "name": "mini-wesgame",
+  "private": true,
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=20"
+  },
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "dev": "npm run dev -w frontend",
+    "build": "npm run build -w frontend"
+  }
+}

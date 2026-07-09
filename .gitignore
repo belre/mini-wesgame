@@ -1,0 +1,31 @@
+node_modules/
+dist/
+.next/
+next-env.d.ts
+out/
+cdk.out/
+coverage/
+*.tsbuildinfo
+.env
+.env.local
+.env.*.local
+.DS_Store
+
+# スプライト検証用のWesnothアセット(GPL)。fetch-demo-sprites.mjs でローカル取得する
+packages/frontend/public/sprites/
+# スプライトパック(A-4)。build-sprite-packs.mts が public/sprites/ から生成(GPL画像を含む)
+packages/frontend/public/packs/
+# 組み込み1枚絵(フォールバック用)の生成物。fetch-demo-sprites.mjs が生成する(GPL画像を含む)
+packages/frontend/src/generated/
+
+# Playwright
+packages/frontend/test-results/
+packages/frontend/playwright-report/
+
+# Claude Code: worktreeとローカル設定はコミットしない(skillsはコミットする)
+.claude/worktrees/
+.claude/settings.local.json
+site/
+
+# LibreOffice/OpenOfficeのロックファイル(docs/terrain_audit/*.csv編集中に生成される)
+.~lock.*#

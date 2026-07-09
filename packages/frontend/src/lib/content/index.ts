@@ -32,15 +32,36 @@ export const TERRAIN_SPRITES: Record<string, TerrainSpriteDef> = {
   grassland: { ground: [WESNOTH_GRASS] },
   forest: { ground: [WESNOTH_GRASS, T("forest-tile.png")] },
   hills: { ground: [T("hills-tile.png")] },
-  mountains: { ground: [T("hills-tile.png"), T("mountains-tile.png")] },
+  // 2026-07-10: mountains/basic.pngは地面を塗りつぶす絵ではなく本家準拠の
+  // 立体物(峰オブジェクト)。岩がちな丘(hills-tile)の上に峰を立てる構図にする
+  mountains: {
+    ground: [T("hills-tile.png")],
+    objects: [
+      {
+        srcs: [T("mountains-basic.png"), T("mountains-basic2.png"), T("mountains-basic3.png")],
+        occludes: true,
+        mirror: true,
+        offset: { dx: 0, dy: 2 },
+      },
+    ],
+  },
   sand: { ground: [T("sand-beach-tile.png")] },
   desert: { ground: [T("sand-desert-tile.png")] },
   shallow_water: { ground: [T("shallow-water-tile.png")] },
   deep_water: { ground: [T("deep-water-tile.png")] },
-  village: { ground: [WESNOTH_GRASS, T("village-tile.png")] },
-  castle: { ground: [T("castle-tile.png")] },
-  keep: { ground: [T("keep-tile.png")] },
-  // 岩場の相当画は山を流用(通行不可の見た目は色+▲マーク時代に戻さず山画で代用)
+  // 2026-07-10: village/human.pngも同様に立体物(家屋オブジェクト)。草原の上に建物を置く構図
+  village: {
+    ground: [WESNOTH_GRASS],
+    objects: [
+      {
+        srcs: [T("village-human.png"), T("village-human2.png"), T("village-human3.png"), T("village-human4.png")],
+        occludes: true,
+        offset: { dx: 0, dy: 0 },
+      },
+    ],
+  },
+  castle: { ground: [[T("castle-floor.png"), T("castle-floor2.png"), T("castle-floor3.png")]] },
+  keep: { ground: [T("keep-floor.png")] },
   // swamp / reef / cave / tochka / obstacle / void は色ポリゴンフォールバック
 };
 

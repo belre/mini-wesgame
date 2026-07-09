@@ -55,6 +55,17 @@ export function TerrainTile({
         // ハードエッジで、pixelated(ニアレストネイバー)だと非整数倍率ズームで
         // 縁がギザギザに拡大されてしまう(ユーザー報告・目視確認済み)。
         // 通常のブラウザ既定(bilinear相当)でヘックス縁を滑らかにする
+        //
+        // 2026-07-10 追記(未解決): 地形アセットを本家の正しい戦闘用画像に差し替えたが
+        // (castle=flat/road.png, keep=castle/cobbles-keep.png 等)、これらも元の
+        // *-tile.pngと同じ「ヘックス形にアンチエイリアス無しでくり抜かれたハードエッジ
+        // マスク」だったため、ジャギー自体は解消していない(ユーザー確認: 2026-07-10)。
+        // 本家がこの手のハードエッジを画面に晒さずに済んでいるのは、異なる地形が
+        // 隣接する境界を「6方向×convex/concave」の専用トランジション画像で覆っているため
+        // (このハードエッジ自体を直接見せる場面が本家にはそもそも無い)。
+        // mini-wesgameはこのトランジション機構を実装しておらず(edgeTransition型は
+        // あるがTERRAIN_SPRITESのどのエントリにも未設定)、ジャギーの根本解消には
+        // 本家同様の境界トランジション画像の実装が必要(規模が大きいため未着手)。
         // バリアントレイヤーは座標ハッシュで1枚選ぶ(saltはobjects系と衝突しない100番台)
         const src =
           typeof layer === "string"
@@ -73,7 +84,10 @@ export function TerrainTile({
         );
       })}
       {/* 地形遷移くさび: 隣が異地形の辺にだけ重ねる(くさびの素材は上辺向きが正準。
-          六角形は60度回転で不変なのでSVGのrotateだけで全方向を賄う) */}
+          六角形は60度回転で不変なのでSVGのrotateだけで全方向を賄う)。
+          2026-07-10: ここもimageRendering:pixelatedを外した。ニアレストネイバーのまま
+          回転させると軸に整列しない角度で必ず階段状のジャギーが出るため
+          (ベース地形と同じ理由。本家は回転を使わず6方向個別ファイルで対応している) */}
       {spriteLayers &&
         transitions?.map((t, i) => (
           <image
@@ -84,7 +98,6 @@ export function TerrainTile({
             width={S * 2}
             height={S * 2}
             transform={`rotate(${round2(t.angle)} ${round2(cx)} ${round2(cy)})`}
-            style={{ imageRendering: "pixelated" }}
             pointerEvents="none"
           />
         ))}

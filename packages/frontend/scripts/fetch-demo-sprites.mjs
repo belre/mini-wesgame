@@ -562,7 +562,12 @@ export const ASSET_GROUPS = [
   // ----------------------------------------------------------------
   // 地形タイル
   // ----------------------------------------------------------------
-  // 地形タイル: *-tile.png はエディタ用の単体ヘックス代表画像(ブレンド不要で使える)
+  // 地形タイル: *-tile.png はエディタ用の単体ヘックス代表画像(ブレンド不要で使える)。
+  // 2026-07-10: mountains/castle/keep/villageは*-tile.pngが本家の戦闘マップ描画に
+  // 使われない「マップエディタパレットアイコン専用」画像(terrain.cfgのsymbol_image/
+  // editor_image)だったことが判明したため、実際の戦闘用画像に差し替えた
+  // (岩場・補給拠点は地面を塗りつぶす絵ではなく立体物オブジェクトなのでobjects側で使う。
+  // 浅瀬・深水は本家が画面座標基準の連続テクスチャという別方式のため対象外のまま)
   {
     base: TERRAIN,
     out: join(ROOT, "terrain"),
@@ -570,14 +575,21 @@ export const ASSET_GROUPS = [
       { remote: "grass/green.png",                      local: "grass-green.png" },
       { remote: "forest/deciduous-summer-tile.png",     local: "forest-tile.png" },
       { remote: "hills/regular.png",                    local: "hills-tile.png" },
-      { remote: "mountains/basic-tile.png",             local: "mountains-tile.png" },
       { remote: "water/coast-tile.png",                 local: "shallow-water-tile.png" },
       { remote: "water/ocean-tile.png",                 local: "deep-water-tile.png" },
-      { remote: "village/human-tile.png",               local: "village-tile.png" },
-      { remote: "castle/castle-tile.png",               local: "castle-tile.png" },
-      { remote: "castle/keep-tile.png",                 local: "keep-tile.png" },
       { remote: "sand/beach.png",                       local: "sand-beach-tile.png" },
       { remote: "sand/desert.png",                      local: "sand-desert-tile.png" },
+      { remote: "mountains/basic.png",                  local: "mountains-basic.png" },
+      { remote: "mountains/basic2.png",                 local: "mountains-basic2.png" },
+      { remote: "mountains/basic3.png",                 local: "mountains-basic3.png" },
+      { remote: "flat/road.png",                        local: "castle-floor.png" },
+      { remote: "flat/road2.png",                       local: "castle-floor2.png" },
+      { remote: "flat/road3.png",                       local: "castle-floor3.png" },
+      { remote: "castle/cobbles-keep.png",              local: "keep-floor.png" },
+      { remote: "village/human.png",                    local: "village-human.png" },
+      { remote: "village/human2.png",                   local: "village-human2.png" },
+      { remote: "village/human3.png",                   local: "village-human3.png" },
+      { remote: "village/human4.png",                   local: "village-human4.png" },
     ],
   },
 ];

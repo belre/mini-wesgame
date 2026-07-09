@@ -24,7 +24,6 @@ export const NORTHERNERS: Faction = {
     "orcish_spy",
     "wolf_rider",
     "troll_whelp",
-    "thief",
     "naga_fighter"
   ],
   availableLeaderUnitIds:[
@@ -172,34 +171,6 @@ export const NORTHERNERS: Faction = {
       traitConfig: TROLL_TRAITS,
     },
     {
-      id: "rogue",
-      name: "野盗",
-      level: 2,
-      hp: 40,
-      // 軽装(lightfoot。2026-07-08 defenseTypeとして正式導入。旧terrainOverrides方式から移行)
-      movement: { type: "walk", points: 6 },
-      defenseType: "lightfoot",
-      abilities: ["skirmisher"],
-      attacks: [
-        {
-          id: "dagger",
-          name: "短剣",
-          damage: 6,
-          count: 3,
-          type: "blade",
-          range: "melee",
-          specials: ["backstab"],
-        },
-        { id: "thrown_knife", name: "投げナイフ", damage: 4, count: 3, type: "blade", range: "ranged" },
-      ],
-      // 2026-07-08 ユーザー指定: 身軽だが物理防具が薄い。秘術には強い
-      resistances: { blade: -30, pierce: -20, impact: -20, arcane: 20 },
-      alignment: "chaotic",
-      cost: 24,
-      spriteKey: "units/knalgan/rogue",
-      traitConfig: HUMAN_TRAITS,
-    },
-    {
       id: "naga_warrior",
       name: "ナーガ",
       level: 2,
@@ -328,34 +299,6 @@ export const NORTHERNERS: Faction = {
       traitConfig: TROLL_TRAITS, // 勇敢の可能性
       advancesTo: ["troll"],
     },
-    {
-      id: "thief",
-      name: "野盗",
-      level: 1,
-      hp: 24,
-      // 軽装(lightfoot。2026-07-08 defenseTypeとして正式導入。旧terrainOverrides方式から移行)
-      movement: { type: "walk", points: 6 },
-      defenseType: "lightfoot",
-      attacks: [
-        {
-          id: "dagger",
-          name: "短剣",
-          damage: 4,
-          count: 3,
-          type: "blade",
-          range: "melee",
-          specials: ["backstab"],
-        },
-      ],
-      // 2026-07-08 ユーザー指定: 身軽だが物理防具が薄い。秘術には強い
-      resistances: { blade: -30, pierce: -20, impact: -20, arcane: 20 },
-      alignment: "chaotic",
-      cost: 13,
-      maxXp: 28, // 2026-07-08 ユーザー指定
-      spriteKey: "units/knalgan/thief",
-      traitConfig: HUMAN_TRAITS, // 盗賊は人間
-      advancesTo: ["rogue"],
-    },    
     {
       id: "naga_fighter",
       name: "ナーガ",

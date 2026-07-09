@@ -374,51 +374,5 @@ export const SPRITES: Record<string, UnitSpriteDef> = {
     },
     defend: { reaction: `${ASSET_BASE}/sprites/naga_warrior/warrior-defend-1.png` },
   },
-  "units/knalgan/thief": {
-    base: `${ASSET_BASE}/sprites/thief/thief.png`,
-    standing: [{ image: `${ASSET_BASE}/sprites/thief/thief.png`, duration: 500 }],
-    // image="thief-idle-[1~7].png:[100*4,200,150,500]"
-    idle: [
-      [1, 100], [2, 100], [3, 100], [4, 100], [5, 200], [6, 150], [7, 500],
-    ].map(([n, d]) => ({
-      image: `${ASSET_BASE}/sprites/thief/thief-idle-${n}.png`,
-      duration: d,
-    })),
-    attacks: {
-      dagger: {
-        startTime: -250,
-        frames: [
-          { image: `${ASSET_BASE}/sprites/thief/thief-attack.png`, duration: 100 },
-        ],
-      },
-    },
-    defend: { reaction: `${ASSET_BASE}/sprites/thief/thief-defend.png` },
-  },
-  "units/knalgan/rogue": {
-    base: `${ASSET_BASE}/sprites/rogue/rogue.png`,
-    standing: [{ image: `${ASSET_BASE}/sprites/rogue/rogue.png`, duration: 500 }],
-    attacks: {
-      // dagger: start_time=-200, rogue.png:[50,250,100](本家に専用フレームは無く基本画像のみ)。
-      // offset未定義=汎用ランジが適用される(本家もoffset無指定でエンジン既定の踏み込み)
-      dagger: {
-        startTime: -200,
-        frames: [
-          { image: `${ASSET_BASE}/sprites/rogue/rogue.png`, duration: 50 },
-          { image: `${ASSET_BASE}/sprites/rogue/rogue.png`, duration: 250 },
-          { image: `${ASSET_BASE}/sprites/rogue/rogue.png`, duration: 100 },
-        ],
-      },
-      // throwing knives(本ゲームではid=thrown_knife): start_time=-200, rogue.png:250
-      // (本家に専用投擲フレームは無く基本画像のみ), missile dagger-n -150/150
-      thrown_knife: {
-        startTime: -200,
-        frames: [
-          { image: `${ASSET_BASE}/sprites/rogue/rogue.png`, duration: 250 },
-        ],
-        missile: { startTime: -150, duration: 150, image: `${ASSET_BASE}/sprites/projectiles/dagger-n.png` },
-      },
-    },
-    defend: { reaction: `${ASSET_BASE}/sprites/rogue/rogue-defend-1.png` },
-  },
 
 };

@@ -138,26 +138,44 @@ describe("突撃(charge)", () => {
 });
 
 describe("奇襲(backstab)", () => {
-  const attacker = makeUnit("a", 0, "thief", { pos: { x: 4, y: 5 } });
+  // mini: 担い手(盗賊系)が削除されたため、ナイトブレードの短刀にbackstabをpatchして
+  // ルール自体を検証する(defPatchの前例に従う)
+  const backstabKnife = () =>
+    patchUnitDef("orcish_nightblade", (def) => {
+      def.attacks = [
+        { id: "knife", name: "短刀", damage: 4, count: 3, type: "blade", range: "melee", specials: ["backstab"] },
+      ];
+    });
+  const attacker = makeUnit("a", 0, "orcish_nightblade", { pos: { x: 4, y: 5 } });
   const defender = makeUnit("d", 1, "spearman", { pos: { x: 5, y: 5 } });
 
   it("反対側に防御側の敵がいるとダメージ2倍", () => {
-    const ally = makeUnit("x", 0, "spearman", { pos: { x: 6, y: 6 } }); // (5,5)を挟んで反対側
-    expect(isBackstab(attacker, defender, [attacker, defender, ally])).toBe(true);
-    const p = predictCombat(
-      ctx(attacker, 0, defender, { units: [attacker, defender, ally] }),
-    );
-    expect(p.backstab).toBe(true);
-    expect(p.damagePerStrike).toBe(8); // 短剣4 × 2
+    const restore = backstabKnife();
+    try {
+      const ally = makeUnit("x", 0, "spearman", { pos: { x: 6, y: 6 } }); // (5,5)を挟んで反対側
+      expect(isBackstab(attacker, defender, [attacker, defender, ally])).toBe(true);
+      const p = predictCombat(
+        ctx(attacker, 0, defender, { units: [attacker, defender, ally] }),
+      );
+      expect(p.backstab).toBe(true);
+      expect(p.damagePerStrike).toBe(8); // 短刀4 × 2
+    } finally {
+      restore();
+    }
   });
 
   it("反対側が空きなら通常ダメージ", () => {
-    expect(isBackstab(attacker, defender, [attacker, defender])).toBe(false);
-    const p = predictCombat(
-      ctx(attacker, 0, defender, { units: [attacker, defender] }),
-    );
-    expect(p.backstab).toBe(false);
-    expect(p.damagePerStrike).toBe(4);
+    const restore = backstabKnife();
+    try {
+      expect(isBackstab(attacker, defender, [attacker, defender])).toBe(false);
+      const p = predictCombat(
+        ctx(attacker, 0, defender, { units: [attacker, defender] }),
+      );
+      expect(p.backstab).toBe(false);
+      expect(p.damagePerStrike).toBe(4);
+    } finally {
+      restore();
+    }
   });
 
   it("反対側が防御側の味方なら成立しない", () => {
@@ -276,9 +294,9 @@ describe("遅化(slow)", () => {
 
 describe("狂戦(berserk)", () => {
   it("どちらかが倒れるまでラウンドを繰り返す", () => {
-    // 現ロースターにberserk持ちがいない(knalganのドワーフ狂戦士が無効化中)ため、
-    // thiefの攻撃を狂乱4x4に一時パッチしてルール自体を検証する
-    const restore = patchUnitDef("thief", (def) => {
+    // 現ロースターにberserk持ちがいない(本家knalganのドワーフ狂戦士)ため、
+    // 狼乗りの攻撃を狂乱4x4に一時パッチしてルール自体を検証する
+    const restore = patchUnitDef("wolf_rider", (def) => {
       def.attacks = [
         { id: "frenzy", name: "狂乱", damage: 4, count: 4, type: "blade", range: "melee", specials: ["berserk"] },
       ];
@@ -288,7 +306,7 @@ describe("狂戦(berserk)", () => {
       def.attacks = [];
     });
     try {
-      const berserker = makeUnit("a", 0, "thief");
+      const berserker = makeUnit("a", 0, "wolf_rider");
       const corpse = makeUnit("d", 1, "orcish_grunt", { hp: 18, traits: ["undead"] });
       const result = resolveCombat(ctx(berserker, 0, corpse), () => 0);
       // 狂乱4x4 vs HP18 → 1ラウンド(16)では倒れず、2ラウンド目で決着

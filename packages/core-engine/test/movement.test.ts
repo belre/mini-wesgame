@@ -229,8 +229,6 @@ describe("moveCostFor: 騎馬(defenseType=cavalry)は移動コストも歩兵と
 describe("軽装(defenseType: lightfoot。本家elusivefoot準拠 2026-07-08)", () => {
   it.each([
     ["orcish_nightblade", "northerners"],
-    ["thief", "northerners"],
-    ["rogue", "northerners"],
     ["orcish_spy", "northerners"],
   ])("%s(%s陣営)は沼地・浅瀬を歩兵より速く渡る(コスト2)", (unitId) => {
     const unit = getUnitDef(unitId);

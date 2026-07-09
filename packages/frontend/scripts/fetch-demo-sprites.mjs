@@ -17,7 +17,6 @@ const ORCS      = `${BASE}/orcs`;
 const GOBLINS   = `${BASE}/goblins`;
 const TROLLS    = `${BASE}/trolls`;
 const NAGAS     = `${BASE}/nagas`;
-const OUTLAWS   = `${BASE}/human-outlaws`;
 const PROJ      = "https://raw.githubusercontent.com/wesnoth/wesnoth/master/data/core/images/projectiles";
 const HALO      = "https://raw.githubusercontent.com/wesnoth/wesnoth/master/data/core/images/halo";
 const TERRAIN   = "https://raw.githubusercontent.com/wesnoth/wesnoth/master/data/core/images/terrain";
@@ -523,22 +522,6 @@ export const ASSET_GROUPS = [
       })),
     ],
   },
-  // rogue/thief は human-outlaws/
-  {
-    base: OUTLAWS,
-    out: join(ROOT, "rogue"),
-    files: ["rogue.png", "rogue-defend-1.png"],
-  },
-  {
-    base: OUTLAWS,
-    out: join(ROOT, "thief"),
-    files: [
-      "thief.png", "thief-attack.png", "thief-defend.png",
-      // idle: thief-idle-[1~7]:[100*4,200,150,500]
-      ...Array.from({ length: 7 }, (_, i) => `thief-idle-${i + 1}.png`),
-    ],
-  },
-
   // ----------------------------------------------------------------
   // 飛び道具
   // ----------------------------------------------------------------

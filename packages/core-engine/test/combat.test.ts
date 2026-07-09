@@ -106,43 +106,55 @@ describe("UnitDef.defenseOverrides(地形ごとの防御率個別上書き)", ()
 
 describe("strikeDamage", () => {
   const spearman = getUnitDef("spearman"); // lawful, 槍 7x3 pierce
-  const skeleton = getUnitDef("skeleton"); // chaotic, pierce耐性60
+  const skeleton = getUnitDef("orcish_grunt"); // chaotic, 剣 9x2(mini: スケルトンの代役)
   const spear = spearman.attacks[0];
 
   it("耐性でダメージが減る(切り捨てではなく四捨五入)", () => {
-    // 7 × (100-60)/100 = 2.8 → 3
-    expect(strikeDamage(spear, spearman, skeleton, TIME_OF_DAY_DEFS.dawn)).toBe(3);
+    // mini: pierce耐性60の担い手が陣営削減で消えたためpatchで再現(defPatchの前例)
+    const restore = patchUnitDef("orcish_grunt", (d) => {
+      d.resistances = { pierce: 60 };
+    });
+    try {
+      // 7 × (100-60)/100 = 2.8 → 3
+      expect(strikeDamage(spear, spearman, getUnitDef("orcish_grunt"), TIME_OF_DAY_DEFS.dawn)).toBe(3);
+    } finally {
+      restore();
+    }
   });
 
   it("lawfulは朝に+25%", () => {
-    const target = getUnitDef("walking_corpse"); // pierce耐性なし
+    const target = getUnitDef("orcish_grunt"); // pierce耐性なし
     // 7 × 1.25 = 8.75 → 9
     expect(strikeDamage(spear, spearman, target, TIME_OF_DAY_DEFS.morning)).toBe(9);
   });
 
   it("chaoticは朝に-25%", () => {
-    const axe = skeleton.attacks[0]; // 7x3 blade
+    const sword = skeleton.attacks[0]; // 9x2 blade
     const target = getUnitDef("spearman");
-    // 7 × 0.75 = 5.25 → 5
-    expect(strikeDamage(axe, skeleton, target, TIME_OF_DAY_DEFS.morning)).toBe(5);
+    // 9 × 0.75 = 6.75 → 7
+    expect(strikeDamage(sword, skeleton, target, TIME_OF_DAY_DEFS.morning)).toBe(7);
   });
 
   it("最低ダメージは1", () => {
-    const ghost = getUnitDef("ghost"); // blade耐性50
-    const bat = getUnitDef("vampire_bat");
-    const fangs = bat.attacks[0]; // 4x2 blade, chaotic
-    // 朝: 4 × 0.75 × 0.5 = 1.5 → 2、では1にならないので cold 70%耐性で検証
-    const wail = ghost.attacks[1]; // 3x3 cold
-    const enemyGhost = getUnitDef("ghost"); // cold耐性70
-    // 朝(chaotic -25%): 3 × 0.75 × 0.3 = 0.675 → round 1 → 1
-    expect(strikeDamage(wail, ghost, enemyGhost, TIME_OF_DAY_DEFS.morning)).toBe(1);
-    void fangs;
+    // mini: 冷気弱攻撃×高耐性の組み合わせの担い手が消えたためpatchで再現
+    const restore = patchUnitDef("wolf_rider", (d) => {
+      d.attacks[0] = { id: "chill", name: "冷気", damage: 3, count: 3, type: "cold", range: "melee" };
+      d.resistances = { cold: 70 };
+    });
+    try {
+      const wolf = getUnitDef("wolf_rider"); // chaotic
+      const chill = wolf.attacks[0];
+      // 朝(chaotic -25%): 3 × 0.75 × 0.3 = 0.675 → round 1 → 1
+      expect(strikeDamage(chill, wolf, wolf, TIME_OF_DAY_DEFS.morning)).toBe(1);
+    } finally {
+      restore();
+    }
   });
 });
 
 describe("displayDamage", () => {
   const spearman = getUnitDef("spearman"); // lawful, 槍 7x3 pierce
-  const skeleton = getUnitDef("skeleton"); // chaotic, 斧 7x3 blade
+  const skeleton = getUnitDef("orcish_grunt"); // chaotic, 剣 9x2 blade
   const spear = spearman.attacks[0];
   const axe = skeleton.attacks[0];
 
@@ -156,14 +168,14 @@ describe("displayDamage", () => {
   });
 
   it("chaoticは朝に-25%", () => {
-    // 7 × 0.75 = 5.25 → 5
-    expect(displayDamage(axe, skeleton, TIME_OF_DAY_DEFS.morning)).toBe(5);
+    // 9 × 0.75 = 6.75 → 7
+    expect(displayDamage(axe, skeleton, TIME_OF_DAY_DEFS.morning)).toBe(7);
   });
 
   it("勇敢は不利な時間帯補正を無効化する", () => {
     expect(
       displayDamage(axe, skeleton, TIME_OF_DAY_DEFS.morning, { attackerTraits: ["fearless"] }),
-    ).toBe(7);
+    ).toBe(9);
   });
 
   it("統率(隣接の統率持ち味方)で+25%", () => {
@@ -189,10 +201,17 @@ describe("displayDamage", () => {
   });
 
   it("最低ダメージは1", () => {
-    const ghost = getUnitDef("ghost"); // chaotic
-    const wail = ghost.attacks[1]; // 3x3 cold
-    // 朝(chaotic -25%)かつ遅化: 3 × 0.75 × 0.5 = 1.125 → round 1 → 1
-    expect(displayDamage(wail, ghost, TIME_OF_DAY_DEFS.morning, { slowed: true })).toBe(1);
+    // mini: 弱攻撃の担い手が消えたためpatchで再現
+    const restore = patchUnitDef("wolf_rider", (d) => {
+      d.attacks[0] = { id: "chill", name: "冷気", damage: 3, count: 3, type: "cold", range: "melee" };
+    });
+    try {
+      const wolf = getUnitDef("wolf_rider"); // chaotic
+      // 朝(chaotic -25%)かつ遅化: 3 × 0.75 × 0.5 = 1.125 → round 1 → 1
+      expect(displayDamage(wolf.attacks[0], wolf, TIME_OF_DAY_DEFS.morning, { slowed: true })).toBe(1);
+    } finally {
+      restore();
+    }
   });
 });
 
@@ -213,7 +232,7 @@ describe("hasRemainingAction", () => {
     const a = makeUnit("a", 0, "spearman");
     a.movesLeft = 0;
     a.pos = { x: 5, y: 5 };
-    const enemy = makeUnit("e", 1, "skeleton");
+    const enemy = makeUnit("e", 1, "orcish_grunt");
     enemy.pos = { x: 6, y: 5 }; // 隣接
     expect(hasRemainingAction(a, [a, enemy])).toBe(true);
   });
@@ -222,7 +241,7 @@ describe("hasRemainingAction", () => {
     const a = makeUnit("a", 0, "spearman");
     a.movesLeft = 0;
     a.pos = { x: 5, y: 5 };
-    const enemy = makeUnit("e", 1, "skeleton");
+    const enemy = makeUnit("e", 1, "orcish_grunt");
     enemy.pos = { x: 9, y: 9 }; // 隣接していない
     expect(hasRemainingAction(a, [a, enemy])).toBe(false);
   });
@@ -231,7 +250,7 @@ describe("hasRemainingAction", () => {
     const a = makeUnit("a", 0, "spearman");
     a.movesLeft = 0;
     a.pos = { x: 5, y: 5 };
-    const deadEnemy = makeUnit("e", 1, "skeleton");
+    const deadEnemy = makeUnit("e", 1, "orcish_grunt");
     deadEnemy.pos = { x: 6, y: 5 };
     deadEnemy.hp = 0;
     expect(hasRemainingAction(a, [a, deadEnemy])).toBe(false);
@@ -249,7 +268,7 @@ describe("hasRemainingAction", () => {
 
 describe("chooseRetaliation", () => {
   it("同レンジの攻撃がなければ反撃なし", () => {
-    const skeleton = getUnitDef("skeleton"); // meleeのみ
+    const skeleton = getUnitDef("orcish_grunt"); // meleeのみ
     const bowman = getUnitDef("bowman");
     expect(chooseRetaliation(skeleton, bowman, "ranged", TIME_OF_DAY_DEFS.dawn)).toBeNull();
   });
@@ -264,12 +283,12 @@ describe("chooseRetaliation", () => {
 
 function makeCombatCtx(overrides?: Partial<CombatContext>): CombatContext {
   const attacker = makeUnit("a", 0, "spearman");
-  const defender = makeUnit("d", 1, "walking_corpse");
+  const defender = makeUnit("d", 1, "orcish_grunt");
   return {
     attacker,
     attackerDef: getUnitDef("spearman"),
     defender,
-    defenderDef: getUnitDef("walking_corpse"),
+    defenderDef: getUnitDef("orcish_grunt"),
     attack: getUnitDef("spearman").attacks[0], // 槍 7x3
     attackerTerrain: terrainById("grassland"),
     defenderTerrain: terrainById("grassland"),
@@ -284,9 +303,9 @@ describe("predictCombat", () => {
     expect(p.hitChance).toBeCloseTo(0.6);
     expect(p.damagePerStrike).toBe(7);
     expect(p.expectedDamageDealt).toBeCloseTo(0.6 * 7 * 3);
-    // 歩く死体は接触4x3 impactで反撃
+    // 戦士(orcish_grunt)は剣9x2で反撃
     expect(p.retaliation).not.toBeNull();
-    expect(p.expectedDamageTaken).toBeCloseTo(0.6 * 4 * 3);
+    expect(p.expectedDamageTaken).toBeCloseTo(0.6 * 9 * 2);
   });
 
   it("遠隔攻撃に遠隔手段のない相手からは反撃を受けない", () => {
@@ -303,12 +322,12 @@ describe("predictCombat", () => {
 });
 
 describe("resolveCombat", () => {
-  it("rng=0(全弾命中)で交互に打ち合い、死亡時点で打ち切る", () => {
+  it("rng=0(全弾命中)で交互に打ち合い、全弾撃ち切る", () => {
     const result = resolveCombat(makeCombatCtx(), () => 0);
-    // 歩く死体 HP18: 7×3打で3打目に0。反撃(4x3)は3打目の前までに2回入る
-    expect(result.defenderHpAfter).toBe(0);
-    expect(result.defenderDied).toBe(true);
-    expect(result.attackerHpAfter).toBe(36 - 8);
+    // 戦士 HP38: 槍7×3打=21で生存(38-21=17)。反撃は剣9×2打=18
+    expect(result.defenderHpAfter).toBe(38 - 21);
+    expect(result.defenderDied).toBe(false);
+    expect(result.attackerHpAfter).toBe(36 - 18);
     const attackerStrikes = result.strikes.filter((s) => s.actor === "attacker");
     expect(attackerStrikes).toHaveLength(3);
   });
@@ -316,7 +335,7 @@ describe("resolveCombat", () => {
   it("rng=0.99(全弾回避)でダメージなし", () => {
     const result = resolveCombat(makeCombatCtx(), () => 0.99);
     expect(result.attackerHpAfter).toBe(36);
-    expect(result.defenderHpAfter).toBe(18);
+    expect(result.defenderHpAfter).toBe(38);
     expect(result.strikes.every((s) => !s.hit)).toBe(true);
   });
 });

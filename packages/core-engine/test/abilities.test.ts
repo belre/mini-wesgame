@@ -20,7 +20,7 @@ function newMatch(): MatchState {
     {
       players: [
         { userId: P0, factionId: "loyalists" },
-        { userId: P1, factionId: "undead" },
+        { userId: P1, factionId: "northerners" },
       ],
       mapId: "valley_crossing",
     },
@@ -71,11 +71,11 @@ function cycle(state: MatchState): MatchState {
 describe("すり抜け(skirmisher)", () => {
   it("敵のZOCを無視して移動できる", () => {
     const map = flatMap(12, 12);
-    const skirmisher = makeUnit("s", 0, "saurian_skirmisher", { x: 2, y: 5 });
+    const skirmisher = makeUnit("s", 0, "fencer", { x: 2, y: 5 });
     const enemy = makeUnit("e", 1, "spearman", { x: 5, y: 5 });
     const reachable = computeReachable({
       unit: skirmisher,
-      unitDef: getUnitDef("saurian_skirmisher"),
+      unitDef: getUnitDef("fencer"),
       units: [skirmisher, enemy],
       map,
     });
@@ -90,15 +90,23 @@ describe("地形コストの個別上書き(スケルトンの潜水移動)", ()
   const wall = flatMap(6, 3, ["ggWggg", "ggWggg", "ggWggg"]); // x=2列が深海の壁
 
   it("スケルトンは深海を渡れる", () => {
-    const skeleton = makeUnit("sk", 0, "skeleton", { x: 1, y: 1 });
-    const reachable = computeReachable({
-      unit: skeleton,
-      unitDef: getUnitDef("skeleton"),
-      units: [skeleton],
-      map: wall,
+    // mini版に潜水ユニット(本家スケルトン)がいないため、terrainOverridesの仕組みだけ検証する
+    const restore = patchUnitDef("orcish_grunt", (d) => {
+      d.movement.terrainOverrides = { ...d.movement.terrainOverrides, deep_water: 2 };
     });
-    expect(reachable.get(hexKey({ x: 2, y: 1 }))?.cost).toBe(2);
-    expect(reachable.has(hexKey({ x: 3, y: 1 }))).toBe(true);
+    try {
+      const skeleton = makeUnit("sk", 0, "orcish_grunt", { x: 1, y: 1 });
+      const reachable = computeReachable({
+        unit: skeleton,
+        unitDef: getUnitDef("orcish_grunt"),
+        units: [skeleton],
+        map: wall,
+      });
+      expect(reachable.get(hexKey({ x: 2, y: 1 }))?.cost).toBe(2);
+      expect(reachable.has(hexKey({ x: 3, y: 1 }))).toBe(true);
+    } finally {
+      restore();
+    }
   });
 
   it("通常の歩行ユニットは深海に入れない", () => {
@@ -209,16 +217,24 @@ describe("回復・治癒・再生", () => {
   });
 
   it("回復+4: 隣接する味方を4回復する", () => {
-    const state = newMatch();
-    state.units.push(makeUnit("healer", 0, "saurian_augur", { x: 8, y: 6 }));
-    state.units.push(makeUnit("wounded", 0, "spearman", { x: 8, y: 7 }, { hp: 10 }));
-    const next = cycle(state);
-    expect(next.units.find((u) => u.id === "wounded")!.hp).toBe(14);
+    // mini版にheals4持ち(本家エルフの呪術師など)がいないため、魔術師に一時付与して検証する
+    const restore = patchUnitDef("mage", (d) => {
+      d.abilities = ["heals4"];
+    });
+    try {
+      const state = newMatch();
+      state.units.push(makeUnit("healer", 0, "mage", { x: 8, y: 6 }));
+      state.units.push(makeUnit("wounded", 0, "spearman", { x: 8, y: 7 }, { hp: 10 }));
+      const next = cycle(state);
+      expect(next.units.find((u) => u.id === "wounded")!.hp).toBe(14);
+    } finally {
+      restore();
+    }
   });
 
   it("治癒: 隣接する味方の毒を治療する(そのターンは回復しない)", () => {
     const state = newMatch();
-    state.units.push(makeUnit("curer", 0, "elvish_shaman", { x: 8, y: 6 }));
+    state.units.push(makeUnit("curer", 0, "white_mage", { x: 8, y: 6 }));
     state.units.push(
       makeUnit("sick", 0, "spearman", { x: 8, y: 7 }, { hp: 20, poisoned: true }),
     );
@@ -258,10 +274,10 @@ describe("伏兵(ambush)・潜水(submerge)の可視判定", () => {
   let restoreAmbush: () => void;
   let restoreSubmerge: () => void;
   beforeAll(() => {
-    restoreAmbush = patchUnitDef("elvish_scout", (def) => {
+    restoreAmbush = patchUnitDef("cavalryman", (def) => {
       def.abilities = ["ambush"];
     });
-    restoreSubmerge = patchUnitDef("skeleton", (def) => {
+    restoreSubmerge = patchUnitDef("orcish_grunt", (def) => {
       def.abilities = ["submerge"];
     });
   });
@@ -272,7 +288,7 @@ describe("伏兵(ambush)・潜水(submerge)の可視判定", () => {
 
   it("森の伏兵は敵から見えない(自軍からは見える)", () => {
     const state = newMatch();
-    state.units.push(makeUnit("ranger", 1, "elvish_scout", { x: 3, y: 4 })); // 森
+    state.units.push(makeUnit("ranger", 1, "cavalryman", { x: 3, y: 4 })); // 森
     expect(isHiddenFrom(state.units.find((u) => u.id === "ranger")!, 0, state)).toBe(true);
     const forAlice = filterStateForViewer(state, P0);
     expect(forAlice.units.some((u) => u.id === "ranger")).toBe(false);
@@ -282,7 +298,7 @@ describe("伏兵(ambush)・潜水(submerge)の可視判定", () => {
 
   it("隣接されると見える", () => {
     const state = newMatch();
-    state.units.push(makeUnit("ranger", 1, "elvish_scout", { x: 3, y: 4 }));
+    state.units.push(makeUnit("ranger", 1, "cavalryman", { x: 3, y: 4 }));
     state.units.push(makeUnit("scout", 0, "spearman", { x: 4, y: 4 })); // 隣接
     const forAlice = filterStateForViewer(state, P0);
     expect(forAlice.units.some((u) => u.id === "ranger")).toBe(true);
@@ -290,7 +306,7 @@ describe("伏兵(ambush)・潜水(submerge)の可視判定", () => {
 
   it("攻撃した後(attacksLeft=0)は見える", () => {
     const state = newMatch();
-    const ranger = makeUnit("ranger", 1, "elvish_scout", { x: 3, y: 4 });
+    const ranger = makeUnit("ranger", 1, "cavalryman", { x: 3, y: 4 });
     ranger.attacksLeft = 0;
     state.units.push(ranger);
     const forAlice = filterStateForViewer(state, P0);
@@ -299,14 +315,14 @@ describe("伏兵(ambush)・潜水(submerge)の可視判定", () => {
 
   it("深海のスケルトンは敵から見えない", () => {
     const state = newMatch();
-    state.units.push(makeUnit("lurker", 1, "skeleton", { x: 6, y: 5 })); // 深海
+    state.units.push(makeUnit("lurker", 1, "orcish_grunt", { x: 6, y: 5 })); // 深海
     const forAlice = filterStateForViewer(state, P0);
     expect(forAlice.units.some((u) => u.id === "lurker")).toBe(false);
   });
 
   it("森にいても伏兵能力がなければ見える", () => {
     const state = newMatch();
-    state.units.push(makeUnit("visible", 1, "elvish_fighter", { x: 3, y: 4 })); // 森
+    state.units.push(makeUnit("visible", 1, "spearman", { x: 3, y: 4 })); // 森
     const forAlice = filterStateForViewer(state, P0);
     expect(forAlice.units.some((u) => u.id === "visible")).toBe(true);
   });
@@ -314,7 +330,7 @@ describe("伏兵(ambush)・潜水(submerge)の可視判定", () => {
   it("隠れた敵のヘックスへ移動しようとすると手前で停止する(発覚)", () => {
     const state = newMatch();
     // (5,4)からはレンジャー(3,4)は見えない(隣接していない)。目的地に敵が潜んでいる
-    state.units.push(makeUnit("ranger", 1, "elvish_scout", { x: 3, y: 4 }));
+    state.units.push(makeUnit("ranger", 1, "cavalryman", { x: 3, y: 4 }));
     state.units.push(makeUnit("mover", 0, "spearman", { x: 5, y: 4 }));
     const { state: next, events } = applyAction(
       state,
@@ -332,7 +348,7 @@ describe("伏兵(ambush)・潜水(submerge)の可視判定", () => {
   it("経路の途中で隠れユニットのZOCに入るとそこで移動終了する", () => {
     const state = newMatch();
     // 森(1,5)に隠れたレンジャー。x=0列を北上する経路(唯一の最短路)が(0,6)でZOCに触れる
-    state.units.push(makeUnit("ranger", 1, "elvish_scout", { x: 1, y: 5 }));
+    state.units.push(makeUnit("ranger", 1, "cavalryman", { x: 1, y: 5 }));
     state.units.push(
       makeUnit("mover", 0, "spearman", { x: 0, y: 7 }, { movesLeft: 4 }),
     );

@@ -1,5 +1,6 @@
 // 村(占領・収入・維持費・回復)と毒・疫病のエンジンレベルのテスト
 import { describe, expect, it } from "vitest";
+import { patchUnitDef } from "./defPatch";
 import { applyAction, createInitialState } from "../src/engine";
 import { getFaction, getUnitDef } from "../src/data/factions";
 import type { MatchState, TraitId, UnitState } from "../src/types";
@@ -13,7 +14,7 @@ function newMatch(): MatchState {
     {
       players: [
         { userId: P0, factionId: "loyalists" },
-        { userId: P1, factionId: "undead" },
+        { userId: P1, factionId: "northerners" },
       ],
       mapId: "valley_crossing",
     },
@@ -258,10 +259,23 @@ describe("遅化(slow)の自動解除", () => {
 });
 
 describe("疫病(plague)", () => {
+  // mini: 疫病の担い手(歩く死体)が陣営削減で消えたため、戦士の攻撃にplagueを
+  // patchしてルール自体を検証する。死体フォームIDも既存ユニットへ一時配線する
+  // (エンジンのフォールバック"walking_corpse"はminiでは解決不能=休眠)
+  const plagueTouch = () =>
+    patchUnitDef("orcish_grunt", (def) => {
+      def.attacks = [
+        { id: "touch", name: "接触", damage: 9, count: 2, type: "impact", range: "melee", specials: ["plague"] },
+      ];
+    });
+
   it("歩く死体に倒されたユニットは相手側の死体になる", () => {
+    const restore = plagueTouch();
+    const loyalists = getFaction("loyalists");
+    loyalists.plagueCorpseUnitId = "orcish_grunt";
     const state = newMatch();
     pushUnit(state, "victim", 0, "spearman", { x: 8, y: 6 }, { hp: 1 });
-    const corpse = pushUnit(state, "corpse", 1, "walking_corpse", { x: 8, y: 7 }, {
+    const corpse = pushUnit(state, "corpse", 1, "orcish_grunt", { x: 8, y: 7 }, {
       traits: ["undead"],
     });
     state.activePlayer = 1;
@@ -278,13 +292,16 @@ describe("疫病(plague)", () => {
     const newCorpse = next.units.find(
       (u) => u.owner === 1 && u.pos.x === 8 && u.pos.y === 6,
     );
-    expect(newCorpse?.unitDefId).toBe("walking_corpse");
+    expect(newCorpse?.unitDefId).toBe("orcish_grunt");
+    restore();
+    delete loyalists.plagueCorpseUnitId;
   });
 
   it("アンデッド特性のユニットは死体化しない", () => {
+    const restore = plagueTouch();
     const state = newMatch();
     pushUnit(state, "victim", 0, "spearman", { x: 8, y: 6 }, { hp: 1, traits: ["undead"] });
-    const corpse = pushUnit(state, "corpse", 1, "walking_corpse", { x: 8, y: 7 }, {
+    const corpse = pushUnit(state, "corpse", 1, "orcish_grunt", { x: 8, y: 7 }, {
       traits: ["undead"],
     });
     state.activePlayer = 1;
@@ -298,12 +315,14 @@ describe("疫病(plague)", () => {
     expect(next.units.some((u) => u.owner === 1 && u.pos.x === 8 && u.pos.y === 6)).toBe(
       false,
     );
+    restore();
   });
 
   it("村の上で倒されたユニットは死体化しない", () => {
+    const restore = plagueTouch();
     const state = newMatch();
     pushUnit(state, "victim", 0, "spearman", { x: 6, y: 3 }, { hp: 1 }); // (6,3)は村
-    const corpse = pushUnit(state, "corpse", 1, "walking_corpse", { x: 6, y: 4 }, {
+    const corpse = pushUnit(state, "corpse", 1, "orcish_grunt", { x: 6, y: 4 }, {
       traits: ["undead"],
     });
     state.activePlayer = 1;
@@ -317,16 +336,18 @@ describe("疫病(plague)", () => {
     expect(next.units.some((u) => u.owner === 1 && u.pos.x === 6 && u.pos.y === 3)).toBe(
       false,
     );
+    restore();
   });
 
-  it("死体の種類は倒された側の陣営のplagueCorpseUnitIdに従う(未指定はwalking_corpse)", () => {
+  it("死体の種類は倒された側の陣営のplagueCorpseUnitIdに従う", () => {
+    const restorePatch = plagueTouch();
     const loyalists = getFaction("loyalists");
     expect(loyalists.plagueCorpseUnitId).toBeUndefined(); // 人間フォルムは未指定のまま
     loyalists.plagueCorpseUnitId = "spearman"; // 配線の検証用に一時的に差し替える
     try {
       const state = newMatch();
       pushUnit(state, "victim", 0, "spearman", { x: 8, y: 6 }, { hp: 1 });
-      const corpse = pushUnit(state, "corpse", 1, "walking_corpse", { x: 8, y: 7 }, {
+      const corpse = pushUnit(state, "corpse", 1, "orcish_grunt", { x: 8, y: 7 }, {
         traits: ["undead"],
       });
       state.activePlayer = 1;
@@ -342,32 +363,11 @@ describe("疫病(plague)", () => {
       expect(newCorpse?.unitDefId).toBe("spearman");
     } finally {
       delete loyalists.plagueCorpseUnitId;
+      restorePatch();
     }
   });
 
-  it("実データ配線: ドレークを倒すとzombie_drakeになる(drakes.plagueCorpseUnitId)", () => {
-    const state = createInitialState(
-      {
-        players: [
-          { userId: P0, factionId: "drakes" },
-          { userId: P1, factionId: "undead" },
-        ],
-        mapId: "valley_crossing",
-      },
-      rng0,
-    );
-    pushUnit(state, "victim", 0, "drake_fighter", { x: 8, y: 6 }, { hp: 1 });
-    const corpse = pushUnit(state, "corpse", 1, "walking_corpse", { x: 8, y: 7 }, {
-      traits: ["undead"],
-    });
-    state.activePlayer = 1;
-    const { state: next } = applyAction(
-      state,
-      P1,
-      { type: "attack", attackerId: corpse.id, defenderId: "victim", attackIndex: 0 },
-      rng0,
-    );
-    const newCorpse = next.units.find((u) => u.owner === 1 && u.pos.x === 8 && u.pos.y === 6);
-    expect(newCorpse?.unitDefId).toBe("zombie_drake");
-  });
+  // mini: 実データ配線テスト(drakes.plagueCorpseUnitId=zombie_drake)は陣営削減で削除。
+  // 本家parle-stroikaに完全版がある
+
 });

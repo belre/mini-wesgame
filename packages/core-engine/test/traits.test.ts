@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { getUnitDef } from "../src/data/factions";
 import { GOBLIN_TRAITS } from "../src/data/factions/traitPresets";
+import { patchUnitDef } from "./defPatch";
 import type { UnitDef } from "../src/types";
 import {
   assignTraits,
@@ -11,23 +12,39 @@ import {
 } from "../src/traits";
 
 describe("effectiveTraits(小物 no_zoc の暗黙付与)", () => {
-  it("レベル0(ゾンビ・コウモリ)には小物が付く。元のtraits配列は変更しない", () => {
-    const stored = ["undead"] as const;
-    const result = effectiveTraits(getUnitDef("walking_corpse"), stored);
-    expect(result).toContain("no_zoc");
-    expect(stored).toEqual(["undead"]); // shallow copyで付加(保存値は不変)
-    expect(effectiveTraits(getUnitDef("vampire_bat"), [])).toContain("no_zoc");
+  // mini: Lv0ユニット(ゾンビ・コウモリ)が陣営削減で消えたため、
+  // levelをpatchしてルール自体を検証する
+  it("レベル0には小物が付く。元のtraits配列は変更しない", () => {
+    const restore = patchUnitDef("orcish_grunt", (d) => {
+      d.level = 0;
+    });
+    try {
+      const stored = ["undead"] as const;
+      const result = effectiveTraits(getUnitDef("orcish_grunt"), stored);
+      expect(result).toContain("no_zoc");
+      expect(stored).toEqual(["undead"]); // shallow copyで付加(保存値は不変)
+    } finally {
+      restore();
+    }
   });
 
-  it("レベル1以上(昇級後のソウルレス・bloodbat)には付かない", () => {
-    expect(effectiveTraits(getUnitDef("soulness"), ["undead"])).not.toContain("no_zoc");
-    expect(effectiveTraits(getUnitDef("bloodbat"), [])).not.toContain("no_zoc");
+  it("レベル1以上には付かない", () => {
+    expect(effectiveTraits(getUnitDef("orcish_grunt"), ["undead"])).not.toContain("no_zoc");
+    expect(effectiveTraits(getUnitDef("wolf_rider"), [])).not.toContain("no_zoc");
   });
 });
 
 describe("assignTraits", () => {
-  it("アンデッドは強制特性のみ", () => {
-    expect(assignTraits(getUnitDef("skeleton"), () => 0)).toEqual(["undead"]);
+  it("強制特性(forced)のみのユニットは常にそれだけを得る", () => {
+    // mini: アンデッド陣営が削減されたため、traitConfigをpatchして検証
+    const restore = patchUnitDef("orcish_grunt", (d) => {
+      d.traitConfig = { forced: ["undead"] };
+    });
+    try {
+      expect(assignTraits(getUnitDef("orcish_grunt"), () => 0)).toEqual(["undead"]);
+    } finally {
+      restore();
+    }
   });
 
   it("人間はpoolから2つ(重複なし)", () => {
@@ -59,12 +76,15 @@ describe("assignTraits", () => {
     expect(["dim", "slow", "weak"]).toContain(traits[0]);
   });
 
-  it("グールはアンデッド固定のみ(2026-07-08 ユーザー指定で勇敢はトロル専用に)", () => {
-    expect(assignTraits(getUnitDef("ghoul"), () => 0)).toEqual(["undead"]);
-  });
-
-  it("トレント(traitConfig未指定)は特性なし", () => {
-    expect(assignTraits(getUnitDef("treant"), () => 0)).toEqual([]);
+  it("traitConfig未指定のユニットは特性なし", () => {
+    const restore = patchUnitDef("orcish_grunt", (d) => {
+      delete d.traitConfig;
+    });
+    try {
+      expect(assignTraits(getUnitDef("orcish_grunt"), () => 0)).toEqual([]);
+    } finally {
+      restore();
+    }
   });
 });
 

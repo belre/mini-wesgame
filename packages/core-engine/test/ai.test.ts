@@ -25,7 +25,7 @@ function newMatch(): MatchState {
     {
       players: [
         { userId: P0, factionId: "loyalists" },
-        { userId: P1, factionId: "undead" },
+        { userId: P1, factionId: "northerners" },
       ],
       mapId: "valley_crossing",
     },
@@ -64,16 +64,16 @@ function pushUnit(
 describe("chooseCpuAction", () => {
   it("自軍ユニットの昇格待ちがあれば最優先でchooseLevelUpを返す", () => {
     const state = newMatch();
-    pushUnit(state, "u1", 0, "elvish_fighter", { x: 8, y: 6 });
+    pushUnit(state, "u1", 0, "spearman", { x: 8, y: 6 });
     state.pendingPromotion.push({
       unitId: "u1",
-      choices: ["elvish_captain", "elvish_hero"],
+      choices: ["lieutenant", "swordsman"],
     });
     const action = chooseCpuAction(state, rng0);
     expect(action.type).toBe("chooseLevelUp");
     if (action.type === "chooseLevelUp") {
       expect(action.unitId).toBe("u1");
-      expect(["elvish_captain", "elvish_hero"]).toContain(action.targetDefId);
+      expect(["lieutenant", "swordsman"]).toContain(action.targetDefId);
     }
   });
 

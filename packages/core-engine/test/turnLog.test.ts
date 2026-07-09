@@ -15,7 +15,7 @@ function newMatch(fog: boolean): MatchState {
     {
       players: [
         { userId: P0, factionId: "loyalists" },
-        { userId: P1, factionId: "undead" },
+        { userId: P1, factionId: "northerners" },
       ],
       mapId: "valley_crossing",
       fog,
@@ -54,7 +54,7 @@ function pushUnit(
 describe("computeTurnLog: 索敵", () => {
   it("霧越しに視界へ入った敵はspottedとして記録される", () => {
     const before = newMatch(true);
-    pushUnit(before, "skeleton1", 1, "skeleton", { x: 2, y: 9 }); // aliceリーダー(2,2)から距離7・視界外
+    pushUnit(before, "skeleton1", 1, "orcish_grunt", { x: 2, y: 9 }); // aliceリーダー(2,2)から距離7・視界外
 
     const afterMove = structuredClone(before);
     afterMove.units.find((u) => u.id === "skeleton1")!.pos = { x: 2, y: 8 }; // 距離6・視界内
@@ -82,7 +82,7 @@ describe("computeTurnLog: 索敵", () => {
         type: "spotted",
         atVersion: before.turnVersion + 1,
         unitId: "skeleton1",
-        unitDefId: "skeleton",
+        unitDefId: "orcish_grunt",
         pos: { x: 2, y: 8 },
       },
     ]);
@@ -90,7 +90,7 @@ describe("computeTurnLog: 索敵", () => {
 
   it("一瞬だけ見えて再び視界外に戻った場合でも記録される(最終状態だけの差分では消える情報)", () => {
     const before = newMatch(true);
-    pushUnit(before, "skeleton1", 1, "skeleton", { x: 2, y: 9 });
+    pushUnit(before, "skeleton1", 1, "orcish_grunt", { x: 2, y: 9 });
 
     const flashSeen = structuredClone(before);
     flashSeen.units.find((u) => u.id === "skeleton1")!.pos = { x: 2, y: 8 }; // 視界内
@@ -118,7 +118,7 @@ describe("computeTurnLog: 索敵", () => {
 
   it("同じユニットは同じ相手ターン内で2回記録されない", () => {
     const before = newMatch(true);
-    pushUnit(before, "skeleton1", 1, "skeleton", { x: 2, y: 9 });
+    pushUnit(before, "skeleton1", 1, "orcish_grunt", { x: 2, y: 9 });
 
     const seen = structuredClone(before);
     seen.units.find((u) => u.id === "skeleton1")!.pos = { x: 2, y: 8 };
@@ -143,14 +143,14 @@ describe("computeTurnLog: 被攻撃", () => {
   it("自分のユニットが攻撃されたらattackedとして記録される", () => {
     const before = newMatch(false);
     pushUnit(before, "guard1", 0, "spearman", { x: 10, y: 5 });
-    pushUnit(before, "skeleton1", 1, "skeleton", { x: 10, y: 4 });
+    pushUnit(before, "skeleton1", 1, "orcish_grunt", { x: 10, y: 4 });
 
     const afterAttack = structuredClone(before);
     const attackEvent: GameEvent = {
       type: "combat",
       attackerId: "skeleton1",
       defenderId: "guard1",
-      attackerAttack: getUnitDef("skeleton").attacks[0],
+      attackerAttack: getUnitDef("orcish_grunt").attacks[0],
       result: {
         strikes: [],
         rounds: 1,
@@ -177,7 +177,7 @@ describe("computeTurnLog: 被攻撃", () => {
         type: "attacked",
         atVersion: 1,
         attackerId: "skeleton1",
-        attackerUnitDefId: "skeleton",
+        attackerUnitDefId: "orcish_grunt",
         attackerPos: { x: 10, y: 4 },
         defenderId: "guard1",
         defenderUnitDefId: "spearman",
@@ -187,11 +187,11 @@ describe("computeTurnLog: 被攻撃", () => {
         // リプレイ用の縮小DTO(戦闘前スナップショット)。周辺2hexに他ユニットはいない
         replay: {
           attacker: {
-            unitDefId: "skeleton",
+            unitDefId: "orcish_grunt",
             owner: 1,
             pos: { x: 10, y: 4 },
-            hp: getUnitDef("skeleton").hp,
-            maxHp: getUnitDef("skeleton").hp,
+            hp: getUnitDef("orcish_grunt").hp,
+            maxHp: getUnitDef("orcish_grunt").hp,
           },
           defender: {
             unitDefId: "spearman",
@@ -209,17 +209,17 @@ describe("computeTurnLog: 被攻撃", () => {
   it("リプレイの書き割りは防御側から距離2以内のみ・3フィールドの縮小DTOになる", () => {
     const before = newMatch(false);
     pushUnit(before, "guard1", 0, "spearman", { x: 10, y: 5 });
-    pushUnit(before, "skeleton1", 1, "skeleton", { x: 10, y: 4 });
+    pushUnit(before, "skeleton1", 1, "orcish_grunt", { x: 10, y: 4 });
     pushUnit(before, "near-ally", 0, "bowman", { x: 9, y: 5 }); // 距離1 → 含まれる
-    pushUnit(before, "near-enemy", 1, "ghoul", { x: 10, y: 7 }); // 距離2 → 含まれる
-    pushUnit(before, "far-away", 1, "ghost", { x: 10, y: 9 }); // 距離4 → 含まれない
+    pushUnit(before, "near-enemy", 1, "orcish_assassin", { x: 10, y: 7 }); // 距離2 → 含まれる
+    pushUnit(before, "far-away", 1, "wolf_rider", { x: 10, y: 9 }); // 距離4 → 含まれない
 
     const afterAttack = structuredClone(before);
     const attackEvent: GameEvent = {
       type: "combat",
       attackerId: "skeleton1",
       defenderId: "guard1",
-      attackerAttack: getUnitDef("skeleton").attacks[0],
+      attackerAttack: getUnitDef("orcish_grunt").attacks[0],
       result: {
         strikes: [],
         rounds: 1,
@@ -244,7 +244,7 @@ describe("computeTurnLog: 被攻撃", () => {
     if (attacked?.type !== "attacked") return;
     expect(attacked.replay?.bystanders).toEqual([
       { unitDefId: "bowman", owner: 0, pos: { x: 9, y: 5 } },
-      { unitDefId: "ghoul", owner: 1, pos: { x: 10, y: 7 } },
+      { unitDefId: "orcish_assassin", owner: 1, pos: { x: 10, y: 7 } },
     ]);
   });
 
@@ -253,16 +253,16 @@ describe("computeTurnLog: 被攻撃", () => {
     // リーダー(視界6)の届かない場所に舞台を作り、guardの視界を距離1に絞る
     const guard = pushUnit(before, "guard1", 0, "spearman", { x: 10, y: 5 });
     guard.maxMoves = 1;
-    pushUnit(before, "skeleton1", 1, "skeleton", { x: 10, y: 4 });
+    pushUnit(before, "skeleton1", 1, "orcish_grunt", { x: 10, y: 4 });
     // 距離2 = 書き割りの範囲内だが、霧で閲覧者からは見えていない
-    pushUnit(before, "lurker", 1, "ghoul", { x: 10, y: 7 });
+    pushUnit(before, "lurker", 1, "orcish_assassin", { x: 10, y: 7 });
 
     const afterAttack = structuredClone(before);
     const attackEvent: GameEvent = {
       type: "combat",
       attackerId: "skeleton1",
       defenderId: "guard1",
-      attackerAttack: getUnitDef("skeleton").attacks[0],
+      attackerAttack: getUnitDef("orcish_grunt").attacks[0],
       result: {
         strikes: [],
         rounds: 1,
@@ -290,7 +290,7 @@ describe("computeTurnLog: 被攻撃", () => {
   it("相手ユニット同士の攻撃(あり得ないはずだが)や自軍の攻撃はattackedに含まれない", () => {
     const before = newMatch(false);
     pushUnit(before, "mine", 0, "spearman", { x: 5, y: 5 });
-    pushUnit(before, "enemy", 1, "skeleton", { x: 6, y: 5 });
+    pushUnit(before, "enemy", 1, "orcish_grunt", { x: 6, y: 5 });
 
     const afterAttack = structuredClone(before);
     // 自分のユニットが攻撃した側(=自分のターンの出来事。相手ターンログには出さない)
@@ -327,7 +327,7 @@ describe("computeTurnLog: 索敵と被攻撃の紐付け", () => {
     const before = newMatch(true);
     const guard = pushUnit(before, "guard1", 0, "spearman", { x: 10, y: 5 });
     guard.maxMoves = 3; // 視界を狭く固定(離れた場所から現れたことにするため)
-    pushUnit(before, "skeleton1", 1, "skeleton", { x: 15, y: 11 }); // guardからもリーダーからも遠い
+    pushUnit(before, "skeleton1", 1, "orcish_grunt", { x: 15, y: 11 }); // guardからもリーダーからも遠い
 
     const adjacentToGuard = hexNeighbors(guard.pos)[0];
     const afterMove = structuredClone(before);
@@ -338,7 +338,7 @@ describe("computeTurnLog: 索敵と被攻撃の紐付け", () => {
       type: "combat",
       attackerId: "skeleton1",
       defenderId: "guard1",
-      attackerAttack: getUnitDef("skeleton").attacks[0],
+      attackerAttack: getUnitDef("orcish_grunt").attacks[0],
       result: {
         strikes: [],
         rounds: 1,
@@ -379,14 +379,14 @@ describe("computeTurnLog: 索敵と被攻撃の紐付け", () => {
   it("最初から見えていたユニットが攻撃してきた場合はfollowedByAttackIdを持つspottedは生成されない", () => {
     const before = newMatch(false);
     pushUnit(before, "guard1", 0, "spearman", { x: 5, y: 5 });
-    pushUnit(before, "skeleton1", 1, "skeleton", { x: 6, y: 5 }); // 最初から隣接=見えている
+    pushUnit(before, "skeleton1", 1, "orcish_grunt", { x: 6, y: 5 }); // 最初から隣接=見えている
 
     const afterAttack = structuredClone(before);
     const attackEvent: GameEvent = {
       type: "combat",
       attackerId: "skeleton1",
       defenderId: "guard1",
-      attackerAttack: getUnitDef("skeleton").attacks[0],
+      attackerAttack: getUnitDef("orcish_grunt").attacks[0],
       result: {
         strikes: [],
         rounds: 1,
@@ -416,7 +416,7 @@ describe("computeTurnLog: 新規出現(雇用等)", () => {
   it("視界内で新しく雇用されたユニットはrecruitedとして記録される(spottedと区別)", () => {
     const before = newMatch(false);
     const afterRecruit = structuredClone(before);
-    pushUnit(afterRecruit, "newSkeleton", 1, "skeleton", { x: 3, y: 3 });
+    pushUnit(afterRecruit, "newSkeleton", 1, "orcish_grunt", { x: 3, y: 3 });
 
     const steps: TurnLogStep[] = [
       {
@@ -433,7 +433,7 @@ describe("computeTurnLog: 新規出現(雇用等)", () => {
         type: "recruited",
         atVersion: before.turnVersion + 1,
         unitId: "newSkeleton",
-        unitDefId: "skeleton",
+        unitDefId: "orcish_grunt",
         pos: { x: 3, y: 3 },
       },
     ]);
@@ -442,7 +442,7 @@ describe("computeTurnLog: 新規出現(雇用等)", () => {
   it("(フォールバック)雇用イベントを伴わずに新規ユニットが現れた場合はspottedとして記録される", () => {
     const before = newMatch(false);
     const afterSpawn = structuredClone(before);
-    pushUnit(afterSpawn, "revived", 1, "skeleton", { x: 3, y: 3 });
+    pushUnit(afterSpawn, "revived", 1, "orcish_grunt", { x: 3, y: 3 });
 
     const steps: TurnLogStep[] = [
       {
@@ -459,7 +459,7 @@ describe("computeTurnLog: 新規出現(雇用等)", () => {
         type: "spotted",
         atVersion: before.turnVersion + 1,
         unitId: "revived",
-        unitDefId: "skeleton",
+        unitDefId: "orcish_grunt",
         pos: { x: 3, y: 3 },
       },
     ]);
@@ -469,11 +469,11 @@ describe("computeTurnLog: 新規出現(雇用等)", () => {
 describe("computeTurnLog: 昇格", () => {
   it("見えている敵ユニットの昇格はleveledUpとして記録される", () => {
     const before = newMatch(false);
-    pushUnit(before, "enemy1", 1, "skeleton", { x: 10, y: 5 }); // 深海/森ではない(潜水判定の副作用を避ける)
+    pushUnit(before, "enemy1", 1, "orcish_grunt", { x: 10, y: 5 }); // 深海/森ではない(潜水判定の副作用を避ける)
 
     const afterLevelUp = structuredClone(before);
     const enemy = afterLevelUp.units.find((u) => u.id === "enemy1")!;
-    enemy.unitDefId = "deathblade"; // 実際の昇格先IDは重要でないので適当な別defIdで代用
+    enemy.unitDefId = "orcish_warrior"; // 実際の昇格先IDは重要でないので適当な別defIdで代用
 
     const steps: TurnLogStep[] = [
       {
@@ -483,8 +483,8 @@ describe("computeTurnLog: 昇格", () => {
           {
             type: "levelUp",
             unitId: "enemy1",
-            fromDefId: "skeleton",
-            toDefId: "deathblade",
+            fromDefId: "orcish_grunt",
+            toDefId: "orcish_warrior",
             amla: false,
           },
         ],
@@ -498,8 +498,8 @@ describe("computeTurnLog: 昇格", () => {
         type: "leveledUp",
         atVersion: before.turnVersion + 1,
         unitId: "enemy1",
-        fromDefId: "skeleton",
-        toDefId: "deathblade",
+        fromDefId: "orcish_grunt",
+        toDefId: "orcish_warrior",
         amla: false,
         pos: { x: 10, y: 5 },
       },
@@ -508,10 +508,10 @@ describe("computeTurnLog: 昇格", () => {
 
   it("霧で隠れている敵ユニットの昇格は記録されない(情報漏洩防止)", () => {
     const before = newMatch(true);
-    pushUnit(before, "enemy1", 1, "skeleton", { x: 15, y: 11 }); // aliceリーダーから遠く、視界外
+    pushUnit(before, "enemy1", 1, "orcish_grunt", { x: 15, y: 11 }); // aliceリーダーから遠く、視界外
 
     const afterLevelUp = structuredClone(before);
-    afterLevelUp.units.find((u) => u.id === "enemy1")!.unitDefId = "deathblade";
+    afterLevelUp.units.find((u) => u.id === "enemy1")!.unitDefId = "orcish_warrior";
 
     const steps: TurnLogStep[] = [
       {
@@ -521,8 +521,8 @@ describe("computeTurnLog: 昇格", () => {
           {
             type: "levelUp",
             unitId: "enemy1",
-            fromDefId: "skeleton",
-            toDefId: "deathblade",
+            fromDefId: "orcish_grunt",
+            toDefId: "orcish_warrior",
             amla: false,
           },
         ],
@@ -586,7 +586,7 @@ describe("computeTurnLog: 自軍の回復・毒(相手のendTurnで発生)", () 
 
   it("敵ユニットのhealedイベントは記録されない(自軍のみ対象)", () => {
     const before = newMatch(false);
-    pushUnit(before, "enemy", 1, "skeleton", { x: 5, y: 5 });
+    pushUnit(before, "enemy", 1, "orcish_grunt", { x: 5, y: 5 });
 
     const after = structuredClone(before);
     const healEvent: GameEvent = {
@@ -625,7 +625,7 @@ describe("computeTurnLog: 自軍の回復・毒(相手のendTurnで発生)", () 
 
   it("敵ユニットのpoisonDamageイベントは記録されない(自軍のみ対象)", () => {
     const before = newMatch(false);
-    pushUnit(before, "enemy", 1, "skeleton", { x: 5, y: 5 });
+    pushUnit(before, "enemy", 1, "orcish_grunt", { x: 5, y: 5 });
 
     const after = structuredClone(before);
     const poisonEvent: GameEvent = { type: "poisonDamage", unitId: "enemy", amount: 8 };

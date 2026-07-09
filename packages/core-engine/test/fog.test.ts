@@ -14,7 +14,7 @@ function newMatch(fog: boolean): MatchState {
     {
       players: [
         { userId: P0, factionId: "loyalists" },
-        { userId: P1, factionId: "undead" },
+        { userId: P1, factionId: "northerners" },
       ],
       mapId: "valley_crossing",
       fog,

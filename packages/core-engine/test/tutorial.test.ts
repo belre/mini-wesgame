@@ -19,7 +19,7 @@ function newMatch(): MatchState {
     {
       players: [
         { userId: "human", factionId: "loyalists" },
-        { userId: "cpu", factionId: "undead" },
+        { userId: "cpu", factionId: "northerners" },
       ],
       mapId: "valley_crossing",
     },

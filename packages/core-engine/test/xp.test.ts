@@ -16,7 +16,7 @@ function newMatch(): MatchState {
     {
       players: [
         { userId: P0, factionId: "loyalists" },
-        { userId: P1, factionId: "undead" },
+        { userId: P1, factionId: "northerners" },
       ],
       mapId: "valley_crossing",
     },
@@ -115,11 +115,19 @@ describe("戦闘での経験値の入手", () => {
   });
 
   it("レベル0の撃破は+4XP", () => {
-    const state = newMatch();
-    pushUnit(state, "atk", 0, "spearman", { x: 8, y: 6 });
-    pushUnit(state, "def", 1, "walking_corpse", { x: 8, y: 7 }, { hp: 1 });
-    const { state: next } = attack(state, rng0);
-    expect(next.units.find((u) => u.id === "atk")!.xp).toBe(4);
+    // mini版にLv0ユニット(本家ゾンビ系)がいないため、一時的にLv0へ書き換えて検証する
+    const restore = patchUnitDef("orcish_grunt", (d) => {
+      d.level = 0;
+    });
+    try {
+      const state = newMatch();
+      pushUnit(state, "atk", 0, "spearman", { x: 8, y: 6 });
+      pushUnit(state, "def", 1, "orcish_grunt", { x: 8, y: 7 }, { hp: 1 });
+      const { state: next } = attack(state, rng0);
+      expect(next.units.find((u) => u.id === "atk")!.xp).toBe(4);
+    } finally {
+      restore();
+    }
   });
 });
 
@@ -168,18 +176,18 @@ describe("レベルアップ", () => {
   it("防御側も戦闘でXPを得てレベルアップできる", () => {
     const state = newMatch();
     pushUnit(state, "atk", 0, "spearman", { x: 8, y: 6 });
-    pushUnit(state, "def", 1, "skeleton", { x: 8, y: 7 }, { xp: 39, traits: ["undead"] });
+    pushUnit(state, "def", 1, "orcish_grunt", { x: 8, y: 7 }, { xp: 41 });
     const { state: next, events } = applyAction(
       state,
       P0,
       { type: "attack", attackerId: "atk", defenderId: "def", attackIndex: 0 },
-      rngMiss, // 双方生存 → 防御側は+1XPで40に到達
+      rngMiss, // 双方生存 → 防御側は+1XPで42(必要XP)に到達
     );
     const def = next.units.find((u) => u.id === "def")!;
     expect(def.xp).toBe(0);
-    // スケルトンはdeathblade(HP39)へ昇格する(AMLAではない)
-    expect(def.unitDefId).toBe("deathblade");
-    expect(def.maxHp).toBe(39);
+    // オークの兵卒はオークの戦士(HP58)へ昇格する(AMLAではない)
+    expect(def.unitDefId).toBe("orcish_warrior");
+    expect(def.maxHp).toBe(58);
     expect(events.some((e) => e.type === "levelUp")).toBe(true);
   });
 });
@@ -201,16 +209,16 @@ describe("多選択昇格(chooseLevelUp)", () => {
   // elvish_fighterのadvancesToを一時パッチしてルール自体を検証する
   let restore: () => void;
   beforeAll(() => {
-    restore = patchUnitDef("elvish_fighter", (def) => {
-      def.advancesTo = ["elvish_captain", "elvish_hero"];
+    restore = patchUnitDef("spearman", (def) => {
+      def.advancesTo = ["lieutenant", "swordsman"];
     });
   });
   afterAll(() => restore());
 
   it("2つ以上の昇格先がある場合、pendingPromotionが設定されてアクションがブロックされる", () => {
     const state = newMatch();
-    // パッチ済み: elvish_fighter は advancesTo: ["elvish_captain", "elvish_hero"]
-    pushUnit(state, "atk", 0, "elvish_fighter", { x: 8, y: 6 }, { xp: 39 });
+    // パッチ済み: elvish_fighter は advancesTo: ["lieutenant", "swordsman"]
+    pushUnit(state, "atk", 0, "spearman", { x: 8, y: 6 }, { xp: 39 });
     pushUnit(state, "def", 1, "orcish_grunt", { x: 8, y: 7 }, { hp: 1 });
     const { state: next, events } = applyAction(
       state,
@@ -220,14 +228,14 @@ describe("多選択昇格(chooseLevelUp)", () => {
     );
     expect(next.pendingPromotion).toHaveLength(1);
     expect(next.pendingPromotion[0].unitId).toBe("atk");
-    expect(next.pendingPromotion[0].choices).toEqual(["elvish_captain", "elvish_hero"]);
+    expect(next.pendingPromotion[0].choices).toEqual(["lieutenant", "swordsman"]);
     expect(events.some((e) => e.type === "pendingLevelUp")).toBe(true);
     expect(() => applyAction(next, P0, { type: "endTurn" }, rng0)).toThrow(/昇格先を選択/);
   });
 
   it("chooseLevelUpで昇格先を選ぶと昇格が確定しpendingPromotionがクリアされる", () => {
     const state = newMatch();
-    pushUnit(state, "atk", 0, "elvish_fighter", { x: 8, y: 6 }, { xp: 39 });
+    pushUnit(state, "atk", 0, "spearman", { x: 8, y: 6 }, { xp: 39 });
     pushUnit(state, "def", 1, "orcish_grunt", { x: 8, y: 7 }, { hp: 1 });
     const { state: pending } = applyAction(
       state,
@@ -238,20 +246,20 @@ describe("多選択昇格(chooseLevelUp)", () => {
     const { state: next, events } = applyAction(
       pending,
       P0,
-      { type: "chooseLevelUp", unitId: "atk", targetDefId: "elvish_hero" },
+      { type: "chooseLevelUp", unitId: "atk", targetDefId: "swordsman" },
       rng0,
     );
     const unit = next.units.find((u) => u.id === "atk")!;
-    expect(unit.unitDefId).toBe("elvish_hero");
+    expect(unit.unitDefId).toBe("swordsman");
     expect(unit.hp).toBe(unit.maxHp);
     expect(next.pendingPromotion).toHaveLength(0);
     const levelUp = events.find((e) => e.type === "levelUp");
-    expect(levelUp).toMatchObject({ fromDefId: "elvish_fighter", toDefId: "elvish_hero", amla: false });
+    expect(levelUp).toMatchObject({ fromDefId: "spearman", toDefId: "swordsman", amla: false });
   });
 
   it("chooseLevelUpで無効な昇格先を指定するとエラー", () => {
     const state = newMatch();
-    pushUnit(state, "atk", 0, "elvish_fighter", { x: 8, y: 6 }, { xp: 39 });
+    pushUnit(state, "atk", 0, "spearman", { x: 8, y: 6 }, { xp: 39 });
     pushUnit(state, "def", 1, "orcish_grunt", { x: 8, y: 7 }, { hp: 1 });
     const { state: pending } = applyAction(
       state,

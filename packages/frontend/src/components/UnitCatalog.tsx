@@ -12,7 +12,6 @@ import {
   TERRAIN_BY_CHAR,
   TERRAINS,
   TRAIT_NAMES,
-  ZOMBIE_VARIATIONS,
   type UnitDef,
 } from "@parle-stroika/core-engine";
 import type { DefenseType } from "@parle-stroika/core-engine";
@@ -179,69 +178,6 @@ function TerrainCatalog() {
   );
 }
 
-// 疫病(plague)の死体フォーム一覧。Faction.plagueCorpseUnitIdが未配線の間は
-// どの陣営からも参照されない「宙に浮いた」データなので、通常のFaction別ロスター
-// (アンデッドの units 配列に物理的には同居している)からは除外し、ここで単独表示する
-function ZombieCatalog() {
-  return (
-    <section style={{ marginBottom: 28 }}>
-      <h2 style={{ fontSize: 15, borderBottom: "1px solid #2a3242", paddingBottom: 4 }}>
-        疫病の死体フォーム(zombie.ts)
-        <span style={{ color: "#8a94a3", fontWeight: 400, marginLeft: 8, fontSize: 12 }}>
-          全{ZOMBIE_VARIATIONS.length}種・未配線(Faction.plagueCorpseUnitIdが空なので実戦では未使用)
-        </span>
-      </h2>
-      <p style={{ fontSize: 12, opacity: 0.7, margin: "6px 0" }}>
-        倒された側の種族に応じた死体フォーム。本家Wesnothのvariationを移植(HP・移動のみ差分、
-        攻撃・耐性・コストは基本形walking_corpseと共通)
-      </p>
-      <div style={{ overflowX: "auto" }}>
-        <table style={{ borderCollapse: "collapse", marginTop: 8 }}>
-          <thead>
-            <tr style={{ background: "#161c26" }}>
-              {["絵", "ID", "名前", "Lv", "HP", "移動", "地形差分", "属性", "コスト", "攻撃", "耐性"].map((h) => (
-                <th key={h} style={{ ...cell, textAlign: "left" }}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {ZOMBIE_VARIATIONS.map((u) => {
-              const img = UNIT_BASE_IMAGES[u.spriteKey];
-              return (
-              <tr key={u.id}>
-                <td style={{ ...cell, textAlign: "center" }}>
-                  {img ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={img} alt={u.name} width={36} height={36}
-                      style={{ imageRendering: "pixelated", objectFit: "contain" }} />
-                  ) : (
-                    <span style={{ color: "#566" }}>—</span>
-                  )}
-                </td>
-                <td style={{ ...cell, color: "#8a94a3" }}>{u.id}</td>
-                <td style={cell}><b>{u.name}</b></td>
-                <td style={cell}>{u.level}</td>
-                <td style={cell}>{u.hp}</td>
-                <td style={cell}>
-                  {MOVE_TYPE_NAMES[u.movement.type] ?? u.movement.type} {u.movement.points}
-                  {u.defenseType && DEFENSE_TYPE_NAMES[u.defenseType] && (
-                    <span style={{ color: "#8a94a3" }}>(移動・防御:{DEFENSE_TYPE_NAMES[u.defenseType]})</span>
-                  )}
-                </td>
-                <td style={cell}><TerrainOverrideDiff unit={u} /></td>
-                <td style={cell}>{ALIGNMENT_NAMES[u.alignment] ?? u.alignment}</td>
-                <td style={cell}>{u.cost}</td>
-                <td style={{ ...cell }}><AttackList unit={u} /></td>
-                <td style={cell}><Resistances unit={u} /></td>
-              </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-    </section>
-  );
-}
 
 export default function UnitCatalog() {
   return (
@@ -253,10 +189,8 @@ export default function UnitCatalog() {
         無印=昇格先専用。XPは特性補正前の必要経験値
       </p>
       <TerrainCatalog />
-      <ZombieCatalog />
       {Object.values(FACTIONS).map((faction) => {
-        const zombieIds = new Set(ZOMBIE_VARIATIONS.map((v) => v.id));
-        const units = faction.units.filter((u) => !zombieIds.has(u.id));
+        const units = faction.units;
         return (
         <section key={faction.id} style={{ marginBottom: 28 }}>
           <h2 style={{ fontSize: 15, borderBottom: "1px solid #2a3242", paddingBottom: 4 }}>

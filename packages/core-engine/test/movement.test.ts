@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { patchUnitDef } from "./defPatch";
 import { hexDistance, hexKey } from "../src/hex";
 import { canMoveTo, computeReachable, moveCostFor, reconstructPath } from "../src/movement";
 import { getUnitDef } from "../src/data/factions";
@@ -111,10 +112,14 @@ describe("computeReachable", () => {
   });
 
   it("小物(no_zoc): レベル0の敵はZOCを発しない(隣接を通過しても移動力が残る)", () => {
+    // mini: Lv0ユニットが陣営削減で消えたためlevelをpatchして検証
+    const restoreLv0 = patchUnitDef("orcish_grunt", (d) => {
+      d.level = 0;
+    });
     const map = flatMap(12, 12);
     const unit = makeUnit("u1", 0, { x: 2, y: 5 });
     // ゾンビ(lv0)。traitsにno_zocは保存しない — effectiveTraitsの暗黙付与で効くことの検証
-    const corpse = makeUnit("e1", 1, { x: 5, y: 5 }, "walking_corpse", undefined, undefined, [
+    const corpse = makeUnit("e1", 1, { x: 5, y: 5 }, "orcish_grunt", undefined, undefined, [
       "undead",
     ]);
     const reachable = computeReachable({
@@ -130,6 +135,7 @@ describe("computeReachable", () => {
     // 敵の隣接を通り抜けて反対側(6,5)にも届く(敵ヘックス自体は進入不可のまま)
     expect(reachable.has(hexKey({ x: 6, y: 5 }))).toBe(true);
     expect(reachable.has(hexKey(corpse.pos))).toBe(false);
+    restoreLv0();
   });
 
   it("味方ユニットは通過できるが停止はできない", () => {
@@ -182,17 +188,25 @@ describe("computeReachable", () => {
     expect(reachable.has(hexKey({ x: 5, y: 2 }))).toBe(false);
   });
 
-  it("飛行ユニットは山(歩行コスト3)もコスト1で越える", () => {
-    const map = flatMap(6, 3, ["gmmggg", "gmmggg", "gmmggg"]);
-    const unit = makeUnit("u1", 0, { x: 0, y: 1 }, "vampire_bat", 3);
-    const reachable = computeReachable({
-      unit,
-      unitDef: getUnitDef("vampire_bat"),
-      units: [unit],
-      map,
+  it("飛行ユニットは岩場(歩行不可)もコスト1で越える", () => {
+    // mini: 飛行ユニットが陣営削減で消えたため、狼をflyにpatchして検証
+    const restore = patchUnitDef("wolf_rider", (d) => {
+      d.movement = { type: "fly", points: 8 };
     });
-    expect(reachable.get(hexKey({ x: 1, y: 1 }))?.cost).toBe(1);
-    expect(reachable.get(hexKey({ x: 3, y: 1 }))?.cost).toBe(3);
+    try {
+      const map = flatMap(6, 3, ["gmmggg", "gmmggg", "gmmggg"]);
+      const unit = makeUnit("u1", 0, { x: 0, y: 1 }, "wolf_rider", 3);
+      const reachable = computeReachable({
+        unit,
+        unitDef: getUnitDef("wolf_rider"),
+        units: [unit],
+        map,
+      });
+      expect(reachable.get(hexKey({ x: 1, y: 1 }))?.cost).toBe(1);
+      expect(reachable.get(hexKey({ x: 3, y: 1 }))?.cost).toBe(3);
+    } finally {
+      restore();
+    }
   });
 });
 
@@ -218,10 +232,6 @@ describe("軽装(defenseType: lightfoot。本家elusivefoot準拠 2026-07-08)", 
     ["thief", "northerners"],
     ["rogue", "northerners"],
     ["orcish_spy", "northerners"],
-    ["saurian_skirmisher", "drakes"],
-    ["saurian_ambusher", "drakes"],
-    ["saurian_augur", "drakes"],
-    ["saurian_soothsayer", "drakes"],
   ])("%s(%s陣営)は沼地・浅瀬を歩兵より速く渡る(コスト2)", (unitId) => {
     const unit = getUnitDef(unitId);
     expect(unit.defenseType).toBe("lightfoot");

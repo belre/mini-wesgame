@@ -99,7 +99,7 @@ describe("毒針(poison_sting = 精密+毒の複合)", () => {
 
   it("毒の部分はアンデッド特性には無効", () => {
     const assassin = makeUnit("a", 0, "orcish_assassin");
-    const skeleton = makeUnit("d", 1, "skeleton", { traits: ["undead"] });
+    const skeleton = makeUnit("d", 1, "orcish_grunt", { traits: ["undead"] });
     const result = resolveCombat(ctx(assassin, 1, skeleton), () => 0);
     expect(result.defenderPoisoned).toBe(false);
   });
@@ -183,58 +183,77 @@ describe("先制(firststrike)", () => {
 });
 
 describe("生命吸収(drain)", () => {
+  // mini: 担い手(コウモリ系)が陣営削減で消えたため、狼の牙にdrainをpatchして
+  // ルール自体を検証する(defPatchの前例に従う)
+  const drainFangs = () =>
+    patchUnitDef("wolf_rider", (def) => {
+      def.attacks = [
+        { id: "fangs", name: "牙", damage: 4, count: 3, type: "blade", range: "melee", specials: ["drain"] },
+      ];
+    });
+
   it("与ダメージの半分回復する", () => {
-    const bat = makeUnit("a", 0, "vampire_bat", { hp: 10 });
-    const target = makeUnit("d", 1, "orcish_grunt"); // 剣9x2で反撃してくる
-    const result = resolveCombat(ctx(bat, 0, target), () => 0);
-    const firstStrike = result.strikes.find((s) => s.actor === "attacker");
-    // 牙4(dawn補正なし) → 吸収2
-    expect(firstStrike?.drained).toBe(2);
+    const restore = drainFangs();
+    try {
+      const bat = makeUnit("a", 0, "wolf_rider", { hp: 10 });
+      const target = makeUnit("d", 1, "orcish_grunt"); // 剣9x2で反撃してくる
+      const result = resolveCombat(ctx(bat, 0, target), () => 0);
+      const firstStrike = result.strikes.find((s) => s.actor === "attacker");
+      // 牙4(dawn補正なし) → 吸収2
+      expect(firstStrike?.drained).toBe(2);
+    } finally {
+      restore();
+    }
   });
 
   it("アンデッド特性には無効", () => {
-    const bat = makeUnit("a", 0, "vampire_bat", { hp: 10 });
-    const skeleton = makeUnit("d", 1, "skeleton", { traits: ["undead"] });
-    const result = resolveCombat(ctx(bat, 0, skeleton), () => 0);
-    expect(result.strikes.every((s) => s.drained === undefined)).toBe(true);
+    const restore = drainFangs();
+    try {
+      const bat = makeUnit("a", 0, "wolf_rider", { hp: 10 });
+      const skeleton = makeUnit("d", 1, "orcish_grunt", { traits: ["undead"] });
+      const result = resolveCombat(ctx(bat, 0, skeleton), () => 0);
+      expect(result.strikes.every((s) => s.drained === undefined)).toBe(true);
+    } finally {
+      restore();
+    }
   });
 });
 
 describe("毒(poison)", () => {
   it("命中で毒状態になる", () => {
-    const ghoul = makeUnit("a", 0, "ghoul", { traits: ["undead"] });
+    const ghoul = makeUnit("a", 0, "orcish_assassin", { traits: ["undead"] });
     const target = makeUnit("d", 1, "spearman");
-    const result = resolveCombat(ctx(ghoul, 0, target), () => 0);
+    const result = resolveCombat(ctx(ghoul, 1, target), () => 0); // 投げナイフ(poison_sting)
     expect(result.defenderPoisoned).toBe(true);
   });
 
   it("アンデッド特性には無効", () => {
-    const ghoul = makeUnit("a", 0, "ghoul", { traits: ["undead"] });
-    const skeleton = makeUnit("d", 1, "skeleton", { traits: ["undead"] });
-    const result = resolveCombat(ctx(ghoul, 0, skeleton), () => 0);
+    const ghoul = makeUnit("a", 0, "orcish_assassin", { traits: ["undead"] });
+    const skeleton = makeUnit("d", 1, "orcish_grunt", { traits: ["undead"] });
+    const result = resolveCombat(ctx(ghoul, 1, skeleton), () => 0);
     expect(result.defenderPoisoned).toBe(false);
   });
 
   it("全弾回避なら毒にならない", () => {
-    const ghoul = makeUnit("a", 0, "ghoul", { traits: ["undead"] });
+    const ghoul = makeUnit("a", 0, "orcish_assassin", { traits: ["undead"] });
     const target = makeUnit("d", 1, "spearman");
-    const result = resolveCombat(ctx(ghoul, 0, target), () => 0.99);
+    const result = resolveCombat(ctx(ghoul, 1, target), () => 0.99);
     expect(result.defenderPoisoned).toBe(false);
   });
 });
 
 describe("遅化(slow)", () => {
-  it("命中で鈍化状態になる(エルフの女呪術師の巻きつき)", () => {
-    const shaman = makeUnit("a", 0, "elvish_shaman");
+  it("命中で鈍化状態になる(オークの狼乗りの網)", () => {
+    const pillager = makeUnit("a", 0, "orcish_pillager");
     const target = makeUnit("d", 1, "spearman");
-    const result = resolveCombat(ctx(shaman, 1, target), () => 0); // entangle(index1)
+    const result = resolveCombat(ctx(pillager, 2, target), () => 0); // 網(index2, slow)
     expect(result.defenderSlowed).toBe(true);
   });
 
   it("全弾回避なら鈍化しない", () => {
-    const shaman = makeUnit("a", 0, "elvish_shaman");
+    const pillager = makeUnit("a", 0, "orcish_pillager");
     const target = makeUnit("d", 1, "spearman");
-    const result = resolveCombat(ctx(shaman, 1, target), () => 0.99);
+    const result = resolveCombat(ctx(pillager, 2, target), () => 0.99);
     expect(result.defenderSlowed).toBe(false);
   });
 
@@ -264,21 +283,26 @@ describe("狂戦(berserk)", () => {
         { id: "frenzy", name: "狂乱", damage: 4, count: 4, type: "blade", range: "melee", specials: ["berserk"] },
       ];
     });
+    // 的も反撃なし・HP18にpatch(旧walking_corpse相当の条件を再現)
+    const restoreTarget = patchUnitDef("orcish_grunt", (def) => {
+      def.attacks = [];
+    });
     try {
       const berserker = makeUnit("a", 0, "thief");
-      const corpse = makeUnit("d", 1, "walking_corpse", { traits: ["undead"] });
+      const corpse = makeUnit("d", 1, "orcish_grunt", { hp: 18, traits: ["undead"] });
       const result = resolveCombat(ctx(berserker, 0, corpse), () => 0);
       // 狂乱4x4 vs HP18 → 1ラウンド(16)では倒れず、2ラウンド目で決着
       expect(result.rounds).toBe(2);
       expect(result.defenderDied).toBe(true);
     } finally {
       restore();
+      restoreTarget();
     }
   });
 
   it("通常攻撃は1ラウンドのみ", () => {
     const grunt = makeUnit("a", 0, "orcish_grunt");
-    const corpse = makeUnit("d", 1, "walking_corpse", { traits: ["undead"] });
+    const corpse = makeUnit("d", 1, "orcish_grunt", { traits: ["undead"] });
     const result = resolveCombat(ctx(grunt, 0, corpse), () => 0.99);
     expect(result.rounds).toBe(1);
   });
@@ -286,13 +310,13 @@ describe("狂戦(berserk)", () => {
 
 describe("勇敢(fearless)と野生(feral)", () => {
   it("勇敢: 不利な時間帯補正を受けない", () => {
-    const ghoul = makeUnit("a", 0, "ghoul", { traits: ["undead", "fearless"] });
+    const ghoul = makeUnit("a", 0, "orcish_assassin", { traits: ["undead", "fearless"] });
     const target = makeUnit("d", 1, "spearman");
-    // 朝はchaotic-25%だが勇敢なら爪4のまま
+    // 朝はchaotic-25%だが勇敢なら短刀9のまま
     const p = predictCombat(
       ctx(ghoul, 0, target, { timeOfDay: TIME_OF_DAY_DEFS.morning }),
     );
-    expect(p.damagePerStrike).toBe(4);
+    expect(p.damagePerStrike).toBe(9);
   });
 
   it("野生: 村の防御率が50%に制限される", () => {

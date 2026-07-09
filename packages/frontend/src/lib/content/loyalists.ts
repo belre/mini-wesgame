@@ -1,7 +1,7 @@
-// 忠誠軍(+共用のsilver_mage/mermaid_initiate)のスプライト定義(コンテンツ)。
+// 忠誠軍のスプライト定義(コンテンツ)。
 // WML転記元は各エントリーのコメント参照。追加手順は docs/sprite_guide.md
 import type { UnitSpriteDef } from "../anim/model";
-import { spearman, bowman_, cavalryman_, fencer_, heavyInf, lieu, swordsman_, whiteMage, pikeman_, longbow, shocktpr, dragoon_, lancer_, duelist_, horseman_, mage_, silverM_, halo_, mermanT_, merman_, projectile, MAGIC_MISSILE_ORB } from "./shared";
+import { spearman, bowman_, cavalryman_, fencer_, heavyInf, lieu, swordsman_, whiteMage, pikeman_, longbow, shocktpr, dragoon_, lancer_, duelist_, horseman_, mage_, halo_, mermanT_, merman_, projectile, MAGIC_MISSILE_ORB } from "./shared";
 
 export const SPRITES: Record<string, UnitSpriteDef> = {
   "units/loyalists/spearman": {
@@ -602,50 +602,6 @@ export const SPRITES: Record<string, UnitSpriteDef> = {
       },
     },
     defend: { reaction: mage_("mage-defend.png") },
-  },
-
-  // rebelsのelvish_magician(フェイフリッカー)が使う。女性型シルバーメイジの画像
-  "units/loyalists/silver_mage": {
-    base: silverM_("silver-mage+female.png"),
-    standing: [{ image: silverM_("silver-mage+female.png"), duration: 500 }],
-    attacks: {
-      // missile(本ゲームではid=magic_fayflicker): start_time=-800,
-      // silver-mage+female-attack-magic[1,2,1]:[100,700,200] + {MAGIC_MISSILE 14 -23}
-      magic_fayflicker: {
-        startTime: -800,
-        frames: [
-          { image: silverM_("silver-mage+female-attack-magic1.png"), duration: 100 },
-          { image: silverM_("silver-mage+female-attack-magic2.png"), duration: 700 },
-          { image: silverM_("silver-mage+female-attack-magic1.png"), duration: 200 },
-        ],
-        missile: MAGIC_MISSILE_ORB,
-        // {MAGIC_MISSILE_STAFF_FLARE -750 600 14 -23}: 詠唱中の杖先フレア
-        extraTracks: [
-          {
-            startTime: -750,
-            anchor: "unit",
-            offsetX: [{ from: 14, to: 14, duration: 600 }],
-            offsetY: [{ from: -23, to: -23, duration: 600 }],
-            frames: Array.from({ length: 7 }, (_, i) => ({
-              image: halo_(`mage-preparation-halo${i + 1}.png`),
-              duration: i < 6 ? 86 : 84,
-            })),
-          },
-        ],
-      },
-      // staff: start_time=-250, +female.png:50, staff[1~2]:[100,200], magic1:75, +female.png:75
-      staff: {
-        startTime: -250,
-        frames: [
-          { image: silverM_("silver-mage+female.png"),               duration: 50 },
-          { image: silverM_("silver-mage+female-attack-staff1.png"), duration: 100 },
-          { image: silverM_("silver-mage+female-attack-staff2.png"), duration: 200 },
-          { image: silverM_("silver-mage+female-attack-magic1.png"), duration: 75 },
-          { image: silverM_("silver-mage+female.png"),               duration: 75 },
-        ],
-      },
-    },
-    defend: { reaction: silverM_("silver-mage+female-defend.png") },
   },
 
   "units/loyalists/merman_triton": {

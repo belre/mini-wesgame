@@ -17,7 +17,7 @@ function newMatch(): MatchState {
     {
       players: [
         { userId: P0, factionId: "loyalists" },
-        { userId: P1, factionId: "undead" },
+        { userId: P1, factionId: "northerners" },
       ],
       mapId: "valley_crossing",
     },
@@ -33,14 +33,14 @@ describe("createInitialState", () => {
       {
         players: [
           { userId: P0, factionId: "loyalists", leaderUnitId: "white_mage" },
-          { userId: P1, factionId: "undead" },
+          { userId: P1, factionId: "northerners" },
         ],
         mapId: "valley_crossing",
       },
       () => 0,
     );
     expect(state.units[0].unitDefId).toBe("white_mage");
-    expect(state.units[1].unitDefId).toBe("dark_sorcerer"); // デフォルト隊長
+    expect(state.units[1].unitDefId).toBe("orcish_warrior"); // デフォルト隊長
   });
 
   it("Lv1のユニットは隊長にできない", () => {
@@ -49,7 +49,7 @@ describe("createInitialState", () => {
         {
           players: [
             { userId: P0, factionId: "loyalists", leaderUnitId: "spearman" },
-            { userId: P1, factionId: "undead" },
+            { userId: P1, factionId: "northerners" },
           ],
           mapId: "valley_crossing",
         },
@@ -63,8 +63,8 @@ describe("createInitialState", () => {
       createInitialState(
         {
           players: [
-            { userId: P0, factionId: "loyalists", leaderUnitId: "skeleton" },
-            { userId: P1, factionId: "undead" },
+            { userId: P0, factionId: "loyalists", leaderUnitId: "orcish_grunt" },
+            { userId: P1, factionId: "northerners" },
           ],
           mapId: "valley_crossing",
         },
@@ -180,7 +180,7 @@ describe("applyAction: recruit", () => {
       applyAction(
         state,
         P0,
-        { type: "recruit", unitDefId: "skeleton", target: { x: 1, y: 1 } },
+        { type: "recruit", unitDefId: "orcish_grunt", target: { x: 1, y: 1 } },
         alwaysHit,
       ),
     ).toThrow(/雇用できない/);
@@ -272,7 +272,7 @@ describe("最長ターン数(maxTurns)", () => {
       {
         players: [
           { userId: P0, factionId: "loyalists" },
-          { userId: P1, factionId: "undead" },
+          { userId: P1, factionId: "northerners" },
         ],
         mapId: "valley_crossing",
         maxTurns,
@@ -317,7 +317,7 @@ describe("最長ターン数(maxTurns)", () => {
     const base = {
       players: [
         { userId: P0, factionId: "loyalists" },
-        { userId: P1, factionId: "undead" },
+        { userId: P1, factionId: "northerners" },
       ],
       mapId: "valley_crossing",
     };
@@ -355,7 +355,7 @@ describe("applyAction: attack", () => {
     expect(attacker.attacksLeft).toBe(0);
     expect(attacker.movesLeft).toBe(0);
     const defender = next.units.find((u) => u.owner === 1)!;
-    expect(defender.hp).toBeLessThan(28); // 黒魔術師 HP28
+    expect(defender.hp).toBeLessThan(58); // オークの戦士 HP58
   });
 
   it("隣接していない敵は攻撃できない", () => {

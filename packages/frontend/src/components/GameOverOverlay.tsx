@@ -39,34 +39,42 @@ export function GameOverOverlay({
           >
             🏰 Inspired by Battle for Wesnoth ↗
           </a>
-          {/* コミュニティ招待リンク(2026-07-10)。URLは.envで指定、未設定時は非表示 */}
-          {DISCORD_INVITE_URL && (
+        </div>
+
+        {/* 広告枠(docs/backlog.md「CPU戦特化・広告モデル案」向けの置き場イメージ確認用に
+            用意したモック)。Discord/Xは公式の広告主ではないため、ここでは「広告」に見せず、
+            この枠を借りた「こちらもどうぞ」という軽い誘導として表示する(2026-07-10)。
+            見た目もプレースホルダーと同じ点線ボーダー(--social)に留め、実データ風の
+            --filledスタイル(実線ボーダー・広告寄りの見た目)とは区別する。
+            URLは.envで指定、未設定のスロットはプレースホルダーのまま */}
+        {(DISCORD_INVITE_URL || X_INVITE_URL) && (
+          <div className="game-over-ad-mocks-label">Also check out</div>
+        )}
+        <div className="game-over-ad-mocks">
+          {DISCORD_INVITE_URL ? (
             <a
-              className="game-over-banner-btn link-button"
+              className="game-over-ad-mock game-over-ad-mock--social"
               href={DISCORD_INVITE_URL}
               target="_blank"
               rel="noopener noreferrer"
             >
-              💬 Join the Discord Server ↗
+              <div className="game-over-ad-mock-title">💬 Join the Discord Server ↗</div>
             </a>
+          ) : (
+            <div className="game-over-ad-mock">Ad banner placeholder 2</div>
           )}
-          {X_INVITE_URL && (
+          {X_INVITE_URL ? (
             <a
-              className="game-over-banner-btn link-button"
+              className="game-over-ad-mock game-over-ad-mock--social"
               href={X_INVITE_URL}
               target="_blank"
               rel="noopener noreferrer"
             >
-              🐦 Follow on X ↗
+              <div className="game-over-ad-mock-title">🐦 Follow on X ↗</div>
             </a>
+          ) : (
+            <div className="game-over-ad-mock">Ad banner placeholder 3</div>
           )}
-        </div>
-
-        {/* 広告枠モック(docs/backlog.md「CPU戦特化・広告モデル案」向けの置き場イメージ確認用。
-            サイズはAdMob標準バナー320x50相当。実装ではなくレイアウト検討のためのプレースホルダー */}
-        <div className="game-over-ad-mocks">
-          <div className="game-over-ad-mock">Ad banner placeholder 2</div>
-          <div className="game-over-ad-mock">Ad banner placeholder 3</div>
         </div>
       </div>
     </div>

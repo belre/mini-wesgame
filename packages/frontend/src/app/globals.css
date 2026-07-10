@@ -216,6 +216,12 @@ select {
   border-top: 1px dashed var(--panel-border);
 }
 
+.game-over-ad-mocks-label {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 12px;
+}
+
 .game-over-ad-mock {
   width: 100%;
   height: 50px;
@@ -270,6 +276,29 @@ select {
 .game-over-ad-mock-sub {
   font-size: 11px;
   color: var(--text-dim);
+}
+
+/* Discord/X招待枠(2026-07-10)。広告枠の場所を借りるが「広告」に見せたくないため、
+   実データ風モック(--filled。実線ボーダー)とは別系統: プレースホルダーと同じ
+   点線ボーダーのまま、クリックできる「こちらもどうぞ」の軽い誘導トーンにする */
+.game-over-ad-mock--social {
+  text-decoration: none;
+  cursor: pointer;
+  gap: 6px;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.game-over-ad-mock--social .game-over-ad-mock-title {
+  color: var(--text-dim);
+  font-weight: 500;
+}
+
+.game-over-ad-mock--social:hover {
+  border-color: var(--accent);
+}
+
+.game-over-ad-mock--social:hover .game-over-ad-mock-title {
+  color: var(--accent);
 }
 
 /* Rematchボタンと並べる本家Wesnothへのクレジットリンク(通常のbuttonと見た目を揃える) */

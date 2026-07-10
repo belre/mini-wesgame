@@ -712,7 +712,11 @@ function BoardScreen(
           ref={pzRef}
           minScale={0.4}
           maxScale={3}
-          limitToBounds={false}
+          // フォーカス可能な範囲を盤面の表示範囲内に制限する(2026-07-10 実機報告):
+          // false(無制限)だと低スペック機での素早いスワイプの慣性(velocity)で
+          // 盤面が画面外まで飛んでいき、戻る手がかりが無くなる不具合があった。
+          // trueにするとreact-zoom-pan-pinchが自動でこの範囲内にスナップバックする
+          limitToBounds
           centerOnInit
           doubleClick={{ disabled: true }}
         >

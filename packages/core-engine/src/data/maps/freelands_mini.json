@@ -1,0 +1,32 @@
+{
+  "id": "freelands_mini",
+  "name": "自由の地(ミニ)",
+  "description": "Wesnoth公式マップ「The Freelands」の横幅縮小移植(27×23)。森と丘の遮蔽が多い平原を、中央の山塊が3本のレーンに区切る。北軍・南軍とも城塞から左翼・中央・右翼のどこへ展開するかが初手の分かれ道。村は16。",
+  "width": 27,
+  "height": 23,
+  "tiles": [
+    "mmmmmmhmfmfmmmwmgmfmhmmmmmm",
+    "mmmmmhvfhffhwwwwvgffmffffmm",
+    "wmhmmfggfffwccchgggwfhfffwh",
+    "wfffggggmgwwckcgggwggghgwwf",
+    "wwvgggvfwwgccccgfwmwwgvfwww",
+    "hgfgggggwgfgggggwhfffgwwggf",
+    "mfmgwwwwfmmmhggggfvhgwwwggh",
+    "fmhwggggmffmhgggggggwwgggfm",
+    "gfwwfvgghmffvghhmfggwwggghm",
+    "wwgggggffmmhgggfhhwwwhhhgfh",
+    "fmfgggggmmmfggWWwwmhghgfggg",
+    "ghgggggfmmhggwgghgmmgggggww",
+    "gwwwwggmmgggWwggmmmfggggfhf",
+    "hggfhhwhwwhWgggfmmffgggggmg",
+    "mfghghwwghmfhgvhfmhfggfgwwg",
+    "mhgggwwggfghgghffmmggvgwhgf",
+    "hfggwwggvfgggghmmffgggwwmmm",
+    "fggwwwfhffgggggmfmwwgggggfh",
+    "ggwwvgwfmhfgggggggwgvgggvgw",
+    "fwwfhggwwwggccccwwmfgggffww",
+    "hwffggfgggggckcwggggggffhfw",
+    "mwfffhmfffvhcccwhfffvfmmmmm",
+    "mmmgmhffffwwwwmfffffhhmmmmm"
+  ]
+}

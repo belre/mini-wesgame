@@ -2,6 +2,7 @@ import { hexDistance } from "../hex";
 import type { GameMap, HexCoord, TerrainDef } from "../types";
 import { TERRAIN_BY_CHAR, terrainById } from "./terrain";
 import valleyCrossingJson from "./maps/valley_crossing.json";
+import freelandsMiniJson from "./maps/freelands_mini.json";
 
 // マップの実体は data/maps/*.json(純粋なデータ)。
 // 現段階ではビルド時にバンドルして読む(クライアント/サーバーのバージョン一致を保証)。
@@ -30,9 +31,12 @@ function validateMap(map: GameMap): GameMap {
 }
 
 export const VALLEY_CROSSING: GameMap = validateMap(valleyCrossingJson as GameMap);
+// 本家「The Freelands」の横幅縮小移植(2026-07-09。scripts/等の変換手順はコミットログ参照)
+export const FREELANDS_MINI: GameMap = validateMap(freelandsMiniJson as GameMap);
 
 export const MAPS: Record<string, GameMap> = {
   [VALLEY_CROSSING.id]: VALLEY_CROSSING,
+  [FREELANDS_MINI.id]: FREELANDS_MINI,
 };
 
 export function mapById(id: string): GameMap {

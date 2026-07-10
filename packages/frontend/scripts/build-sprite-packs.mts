@@ -2,6 +2,11 @@
 //
 // 陣営ごとに「その陣営の全ユニット定義が参照する画像」を1ファイルに連結し、
 // public/packs/units-<factionId>.psp を出力する(形式は src/lib/assets/packFormat.ts)。
+// あわせて地形タイル一式(public/sprites/terrain/ 配下全ファイル)を
+// public/packs/terrain.psp として1本にまとめる(2026-07-10。18ファイル→1リクエスト。
+// terrainはlib/content/index.ts経由でしか定義を引けない=ジオラマ画像の静的importを
+// 含みtsxから読めないため、ユニットのようにスプライト定義表を辿らずディレクトリを
+// そのまま丸ごと固める。terrain/配下は定義に載っていないファイルを置かない運用にすること)
 // 前提: fetch-demo-sprites.mjs 実行済み(public/sprites/ に個別PNGがあること)。
 //
 // - 生成物はGPLのWesnoth素材を含むためコミットしない(.gitignore: public/packs/)
@@ -10,7 +15,7 @@
 // - 陣営間で共有される画像(共用の飛び道具・halo等)は各パックに重複して入る(v1の割り切り。
 //   重複は数十KB規模で、共通パックを分けるAPIコール1回の方が高くつく場合もある。
 //   最適化はSonnet引き継ぎ項目 — docs/asset_delivery.md)
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { allSpriteImages } from "../src/lib/anim/assets";
@@ -19,8 +24,23 @@ import { UNIT_SPRITES } from "../src/lib/content/units";
 
 const FRONTEND = join(dirname(fileURLToPath(import.meta.url)), "..");
 const OUT_DIR = join(FRONTEND, "public", "packs");
+const TERRAIN_DIR = join(FRONTEND, "public", "sprites", "terrain");
 
 await mkdir(OUT_DIR, { recursive: true });
+
+{
+  const names = (await readdir(TERRAIN_DIR)).sort();
+  const files = [];
+  for (const name of names) {
+    const path = `/sprites/terrain/${name}`;
+    files.push({ path, data: new Uint8Array(await readFile(join(TERRAIN_DIR, name))) });
+  }
+  const pack = encodePack(files);
+  await writeFile(join(OUT_DIR, "terrain.psp"), pack);
+  console.log(
+    `terrain.psp: ${files.length}ファイル → 1リクエスト (${(pack.byteLength / 1024 / 1024).toFixed(2)}MB)`,
+  );
+}
 
 // 陣営 = spriteKey の第2セグメント("units/<faction>/...")。
 // FACTIONS.units(雇用ロスター)ではなく UNIT_SPRITES 全定義から拾うこと:

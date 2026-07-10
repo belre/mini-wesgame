@@ -5,7 +5,12 @@
 // 不透明度の規則(可読性フェード)は lib/board/objects.ts の
 // objectOpacity() が正(単体テストあり)。
 // HexGrid肥大化の分割(2026-07-08リファクタ)で components/HexGrid.tsx から移設
-import { imageNaturalSize, useImagesReady, type TerrainObjectDef } from "@/lib/sprites";
+import {
+  imageNaturalSize,
+  resolveAssetUrl,
+  useImagesReady,
+  type TerrainObjectDef,
+} from "@/lib/sprites";
 import { S } from "@/lib/board/geometry";
 import {
   OBJECT_BASELINE_RATIO,
@@ -44,7 +49,7 @@ export function TerrainObjectBillboard({
   const flip = obj.mirror && hashUnit(hexX, hexY, oi * 7 + 3) > 0;
   return (
     <image
-      href={src}
+      href={resolveAssetUrl(src)}
       x={-sz.w / 2}
       y={S * OBJECT_BASELINE_RATIO - sz.h}
       width={sz.w}

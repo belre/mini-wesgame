@@ -65,11 +65,13 @@ export function planMatchAssets(
   return items;
 }
 
-// この対戦で読むべきスプライトパック(A-4)のID列。パックは spriteKey の
-// 第2セグメント("units/<dir>/...")単位で作られる(build-sprite-packs.mts)ため、
-// プレイヤーの陣営IDではなく「ロスターが実際に参照するディレクトリ」の集合を返す
+// この対戦で読むべきスプライトパック(A-4)の名前列(拡張子.pspを除いたファイル名。
+// build-sprite-packs.mtsの出力と1:1対応)。ユニットパックは spriteKey の
+// 第2セグメント("units/<dir>/...")単位で作られるため、プレイヤーの陣営IDではなく
+// 「ロスターが実際に参照するディレクトリ」の集合から "units-<dir>" を組み立てる
 // (陣営間で共有されるユニット — 反乱軍のマーマン=units/loyalists/ 等 — を取り漏らさない。
-// 昇格先は同一ディレクトリに置かれる運用なのでロスター起点で足りる)
+// 昇格先は同一ディレクトリに置かれる運用なのでロスター起点で足りる)。
+// terrainパックは全対戦共通の単一ファイルなので常に含める(2026-07-10)
 export function planSpritePacks(state: Pick<MatchState, "players">): string[] {
   const dirs = new Set<string>();
   for (const player of state.players) {
@@ -78,5 +80,5 @@ export function planSpritePacks(state: Pick<MatchState, "players">): string[] {
       if (seg[0] === "units" && seg[1] && UNIT_SPRITES[unit.spriteKey]) dirs.add(seg[1]);
     }
   }
-  return [...dirs];
+  return [...[...dirs].map((dir) => `units-${dir}`), "terrain"];
 }

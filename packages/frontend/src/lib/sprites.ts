@@ -39,7 +39,7 @@ import { SPRITE_REGISTRY, TERRAIN_SPRITES, UNIT_SPRITES } from "./content";
 // 組み込み1枚絵(フォールバック用)。fetch-demo-sprites.mjsが生成する(gitignore)。
 // 静的importでバンドルに入りアプリ自身(/_next/static/)から配信されるため、
 // CDN・public/spritesの取得に失敗した状況でも表示できる
-import { UNIT_BASE_IMAGES } from "@/generated/unitBaseImages";
+import { UNIT_BASE_IMAGES } from "@/lib/content/unitBaseImages";
 
 // 公認ファサード(2026-07-08 方針確定): スプライト関連(モデル型・解決関数・
 // コンテンツ・ローディング)のimport元はこのファイルに統一する。
@@ -98,12 +98,18 @@ export function preloadTerrainSprite(terrainId: string): Promise<boolean> {
   if (urls.length === 0 || typeof window === "undefined") {
     return Promise.resolve(false);
   }
-  const promise = Promise.all(urls.map(loadImage)).then((r) => {
-    const ok = r.every(Boolean);
-    // 失敗はキャッシュに残さない(Loading画面のリトライで再取得できるように)
-    if (!ok) terrainPreloadCache.delete(terrainId);
-    return ok;
-  });
+  // 先にスプライトパック(terrain.psp)の取得完了を待つ(packsSettled): 待たないと
+  // マウント時プリロードがパック登録を追い越し、resolveAssetUrlがまだ元URLしか
+  // 知らないまま loadImage が個別ファイルへ実リクエストしてしまう
+  // (preloadSprite(ユニット側)と同種の競争条件。2026-07-10発覚)
+  const promise = packsSettled().then(() =>
+    Promise.all(urls.map(loadImage)).then((r) => {
+      const ok = r.every(Boolean);
+      // 失敗はキャッシュに残さない(Loading画面のリトライで再取得できるように)
+      if (!ok) terrainPreloadCache.delete(terrainId);
+      return ok;
+    }),
+  );
   terrainPreloadCache.set(terrainId, promise);
   return promise;
 }
@@ -138,15 +144,20 @@ export function useTerrainSprite(
 }
 
 // 画像URL群のロード完了を待つ汎用フック(地形立体物ビルボード等)。空配列は即ready。
-// loadImageはキャッシュされるため、プリロード済みなら初回レンダーから true になる
+// loadImageはキャッシュされるため、プリロード済みなら初回レンダーから true になる。
+// 先にpacksSettled()を待つ(2026-07-10): 待たないとterrain.pspの登録より先に
+// loadImageが個別ファイルへ実リクエストしてしまう(preloadSprite/preloadTerrainSprite
+// と同種の競争条件。パック無効時はsettled=解決済みPromiseのままなので実質コスト無し)
 export function useImagesReady(srcs: readonly string[]): boolean {
   const [ready, setReady] = useState(false);
   useEffect(() => {
     if (srcs.length === 0) return;
     let alive = true;
-    void Promise.all(srcs.map(loadImage)).then((r) => {
-      if (alive && r.every(Boolean)) setReady(true);
-    });
+    void packsSettled()
+      .then(() => Promise.all(srcs.map(loadImage)))
+      .then((r) => {
+        if (alive && r.every(Boolean)) setReady(true);
+      });
     return () => {
       alive = false;
     };
@@ -194,11 +205,13 @@ export function preloadSprite(spriteKey: string, owner: number): Promise<boolean
 const IDLE_MIN_WAIT_MS = 3000;
 const IDLE_RAND_WAIT_MS = 5000;
 
-// フォールバック用: 組み込み1枚絵をロード+チームカラー変換して返す。
-// バンドル同梱URLなのでCDN障害時でもアプリが生きていれば成功する。
+// フォールバック用: base立ち絵(1枚絵)をロード+チームカラー変換して返す。
+// 2026-07-10: ASSET_BASE経由のCDN配信(wesnoth-contents-delivery)に統一したため、
+// 以前のような「バンドル同梱でCDN障害時も確実に出る」保証は無くなった
+// (terrain・ユニット個別フレームと同じ配信元に揃える一貫性を優先した判断)。
 // プリロードと並行して呼ぶことで、アニメ用フレーム揃うまでの間の
 // 表示(円アイコン化)を防ぐプレースホルダーとしても使う
-async function loadBundledBase(spriteKey: string, owner: number): Promise<string | null> {
+async function loadBaseImage(spriteKey: string, owner: number): Promise<string | null> {
   const bundled = UNIT_BASE_IMAGES[spriteKey];
   if (!bundled || typeof window === "undefined") return null;
   if (!(await loadImage(bundled))) return null;
@@ -224,7 +237,7 @@ export function useUnitSprite(spriteKey: string, owner: number): string | null {
     setFallbackSrc(UNIT_BASE_IMAGES[spriteKey] ?? null);
     // チームカラー版に差し替え(プリロードと並行)。原色→着色のワンテンポは許容し、
     // 円アイコンへの後退だけは避ける
-    void loadBundledBase(spriteKey, owner).then((fallback) => {
+    void loadBaseImage(spriteKey, owner).then((fallback) => {
       if (alive && fallback) setFallbackSrc(fallback);
     });
     void preloadSprite(spriteKey, owner).then((ok) => {

@@ -4,7 +4,7 @@
 // CDN上の物理配置には依存しない(backlog A-4で配置を変えても計画は不変)。
 import { describe, expect, it } from "vitest";
 import { getFaction } from "@parle-stroika/core-engine";
-import { matchAssetKey, planMatchAssets } from "../src/lib/assets/matchAssets";
+import { matchAssetKey, planMatchAssets, planSpritePacks } from "../src/lib/assets/matchAssets";
 import { UNIT_SPRITES } from "../src/lib/content";
 
 const LOYALISTS_VS_NORTHERNERS = {
@@ -65,5 +65,26 @@ describe("planMatchAssets", () => {
     for (const item of planMatchAssets(LOYALISTS_VS_NORTHERNERS)) {
       expect(item.label.length, matchAssetKey(item)).toBeGreaterThan(0);
     }
+  });
+});
+
+describe("planSpritePacks", () => {
+  it("両陣営のユニットパック名(units-<dir>)+terrainを返す", () => {
+    const packs = planSpritePacks(LOYALISTS_VS_NORTHERNERS);
+    expect(packs).toContain("units-loyalists");
+    expect(packs).toContain("units-northerners");
+    expect(packs).toContain("terrain");
+  });
+
+  it("ミラーマッチ(同一陣営)でもパック名は重複しない", () => {
+    const packs = planSpritePacks({
+      players: [
+        { userId: "p0", factionId: "northerners", gold: 100 },
+        { userId: "p1", factionId: "northerners", gold: 100 },
+      ],
+    });
+    expect(new Set(packs).size).toBe(packs.length);
+    expect(packs).toContain("units-northerners");
+    expect(packs).toContain("terrain");
   });
 });

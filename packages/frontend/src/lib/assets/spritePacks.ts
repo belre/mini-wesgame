@@ -8,13 +8,12 @@
 // resolveAssetUrl() 経由でblob URLに解決され、個別のHTTPリクエストが発生しない。
 // - パック無効(環境変数未設定)・取得失敗時は何もしない = 従来の個別URL取得に
 //   そのまま劣化する(プリロードの検証・チームカラー生成・進捗UIは全て既存のまま)
-// - パックの粒度は「陣営単位」(2026-07-08 ユーザー決定: 1回である必要はなく、
-//   陣営ごとのAPIコールは許容)。terrainも将来同じ仕組みで別パックにできるが、
-//   現状の採用済み地形はアプリ組み込み(dioramaImages.ts)なのでパック不要
+// - パックの粒度は「陣営単位」+「地形ひとまとめ」(2026-07-08 ユーザー決定: 1回である
+//   必要はなく、単位ごとのAPIコールは許容。2026-07-10: terrainもこの仕組みでパック化した)
 //
 // 配信(CDNアップロード)はユーザー担当。ビルド: scripts/build-sprite-packs.mts →
-// public/packs/units-<factionId>.psp を NEXT_PUBLIC_SPRITE_PACK_BASE へ置く。
-// 手順の全体像は docs/asset_delivery.md
+// public/packs/units-<factionId>.psp・public/packs/terrain.psp を
+// NEXT_PUBLIC_SPRITE_PACK_BASE へ置く。手順の全体像は docs/asset_delivery.md
 import { registerPackedAsset } from "../anim/assets";
 import { ASSET_BASE } from "../content/shared";
 import { parsePack } from "./packFormat";
@@ -60,11 +59,12 @@ async function fetchPack(name: string): Promise<boolean> {
   }
 }
 
-// 対戦に必要なパック(planSpritePacksが返すディレクトリID列)を取得して登録する。
-// 戻り値は成否のみで、失敗しても呼び出し側は通常の個別プリロードを続行してよい(自動劣化)
-export function loadSpritePacks(packIds: readonly string[]): Promise<boolean> {
+// 対戦に必要なパック(planSpritePacksが返すパック名。拡張子.pspを除いたファイル名)を
+// 取得して登録する。戻り値は成否のみで、失敗しても呼び出し側は通常の個別プリロードを
+// 続行してよい(自動劣化)
+export function loadSpritePacks(packNames: readonly string[]): Promise<boolean> {
   if (!PACK_BASE || typeof window === "undefined") return Promise.resolve(false);
-  const names = [...new Set(packIds)].map((id) => `units-${id}`);
+  const names = [...new Set(packNames)];
   const result = Promise.all(
     names.map((name) => {
       const cached = packCache.get(name);

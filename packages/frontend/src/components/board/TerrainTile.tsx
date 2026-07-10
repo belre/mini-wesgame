@@ -8,7 +8,7 @@
 // フックをこのコンポーネント単位で呼ぶことでRules of Hooksを満たす(親の.mapの中では呼ばない)。
 // HexGrid・CutInStage等の全レンダラー共通の部品。
 // HexGrid肥大化の分割(2026-07-08リファクタ)で components/HexGrid.tsx から移設
-import { useImagesReady, useTerrainSprite } from "@/lib/sprites";
+import { resolveAssetUrl, useImagesReady, useTerrainSprite } from "@/lib/sprites";
 import { S, hexPointsAt, round2 } from "@/lib/board/geometry";
 import { TERRAIN_COLORS } from "@/lib/board/colors";
 import { variantIndex } from "@/lib/board/objects";
@@ -74,7 +74,7 @@ export function TerrainTile({
         return (
           <image
             key={i}
-            href={src}
+            href={resolveAssetUrl(src)}
             x={cx - S}
             y={cy - S}
             width={S * 2}
@@ -92,7 +92,7 @@ export function TerrainTile({
         transitions?.map((t, i) => (
           <image
             key={`tr${i}`}
-            href={t.src}
+            href={resolveAssetUrl(t.src)}
             x={cx - S}
             y={cy - S}
             width={S * 2}

@@ -12,11 +12,11 @@ coverage/
 .DS_Store
 
 # スプライト検証用のWesnothアセット(GPL)。fetch-demo-sprites.mjs でローカル取得する
+# (本番はNEXT_PUBLIC_ASSET_BASE経由でwesnoth-contents-deliveryから配信。ローカルdev用の
+# フォールバック取得先としてのみ使う。2026-07-10: 組み込みバンドル方式は撤去した)
 packages/frontend/public/sprites/
 # スプライトパック(A-4)。build-sprite-packs.mts が public/sprites/ から生成(GPL画像を含む)
 packages/frontend/public/packs/
-# 組み込み1枚絵(フォールバック用)の生成物。fetch-demo-sprites.mjs が生成する(GPL画像を含む)
-packages/frontend/src/generated/
 
 # Playwright
 packages/frontend/test-results/

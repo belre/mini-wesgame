@@ -553,11 +553,4 @@ if (isMain) {
     }
   }
   console.log(`done -> ${ROOT}`);
-  // 組み込み1枚絵(フォールバック用。src/generated/)の生成も続けて行う。
-  // フロントのビルド・typecheckはこの生成物に依存するため、取得とセットで実行する
-  const { execSync } = await import("node:child_process");
-  execSync("npx tsx scripts/generate-unit-base-images.mts", {
-    stdio: "inherit",
-    cwd: join(dirname(fileURLToPath(import.meta.url)), ".."),
-  });
 }

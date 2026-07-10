@@ -403,9 +403,11 @@ GSI `index_publisher_resource_key`: HASH `publisher_resource_key` / RANGE `publi
   **ユニットの追加手順は docs/sprite_guide.md** — WML記法の読み方・トラブルシュートもそちら):
   - `lib/content/` の `UNIT_SPRITES`(spriteKey→フレーム定義。陣営別ファイル)に登録したユニットだけ
     アニメーションスプライトで描画する。フォールバックは2段:
-    アセット取得失敗 → **組み込み1枚絵**(base立ち絵。fetch-demo-sprites.mjsが
-    `src/generated/`に生成し静的importでバンドルに同梱=CDN障害時もアプリ自身から配信できる。
-    gitignore) → それも無い(定義なしspriteKey)場合のみ従来の円+頭文字
+    アセット取得失敗 → **base立ち絵**(`lib/content/unitBaseImages.ts`が
+    `UNIT_SPRITES`のキーから決定的にファイル名を導出し、`ASSET_BASE`経由で取得する。
+    2026-07-10以前は静的importでNext.jsバンドルに同梱していたが、terrain・個別フレームと
+    配信元を揃える一貫性のためCDN(wesnoth-contents-delivery)配信に統一した) →
+    それも無い(定義なしspriteKey)場合のみ従来の円+頭文字
   - フレームモデルはWesnoth AnimationWMLのサブセット: 個別PNG+可変duration(ms)。
     standing=常時ループ、idle=3〜8秒おきに1回。再生は `useUnitSprite` フック
     (ユニット単位の再帰setTimeout。盤面全体は再レンダーしない)

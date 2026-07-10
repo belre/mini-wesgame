@@ -2,7 +2,7 @@
 
 // 全ユニットの一覧表(開発用 /dev/units)。バランス調整・検証比較のための
 // カタログで、core-engine の FACTIONS(=ゲームの正データ)をそのまま表にする。
-// 絵は組み込みbase立ち絵(unitBaseImages。fetch不要でオフラインでも出る)
+// 絵はbase立ち絵(unitBaseImages。CDN配信。docs/asset_delivery.md参照)
 import {
   ABILITY_NAMES,
   FACTIONS,
@@ -15,7 +15,7 @@ import {
   type UnitDef,
 } from "@parle-stroika/core-engine";
 import type { DefenseType } from "@parle-stroika/core-engine";
-import { UNIT_BASE_IMAGES } from "@/generated/unitBaseImages";
+import { UNIT_BASE_IMAGES } from "@/lib/content/unitBaseImages";
 
 const ALIGNMENT_NAMES: Record<string, string> = {
   lawful: "秩序",

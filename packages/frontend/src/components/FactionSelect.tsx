@@ -5,7 +5,7 @@
 // 「configだけ差し替えて内部stateが追従しない」という再戦バグの構造自体が起きない)。
 // プレイヤーは常に先攻(index 0)、選んだ陣営が自軍になる。
 import { getFaction, resolveLeaderDef } from "@parle-stroika/core-engine";
-import { UNIT_BASE_IMAGES } from "@/generated/unitBaseImages";
+import { UNIT_BASE_IMAGES } from "@/lib/content/unitBaseImages";
 
 export const HUMAN_FACTION_ID = "loyalists";
 export const ORC_FACTION_ID = "northerners";

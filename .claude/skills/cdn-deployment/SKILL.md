@@ -52,19 +52,20 @@ curl -sI -H "Origin: http://localhost:3010" https://<ドメイン>/packs/units-l
    (Framework Preset: Next.js)。モノレポ依存(core-engine等)はnpm workspacesで
    リポジトリルートからinstallされる — Vercelは自動でルートのpackage-lock.jsonを検出するが、
    効かない場合は Install Command を `npm install --prefix ../..` 等に調整
-2. **Build Commandに生成物の準備を足す**(ここが最重要。gitignoreされた生成物は
-   ビルド時に作る必要がある):
+2. **Build Commandに生成物の準備を足す**:
    ```
-   node scripts/fetch-demo-sprites.mjs && npx tsx scripts/build-sprite-packs.mts && next build
+   node scripts/fetch-demo-sprites.mjs && next build
    ```
-   - fetch-demo-sprites: public/sprites/ と src/generated/(これが無いと
-     **typecheck/buildが落ちる** — sprites.tsが生成モジュールを静的import)
-   - build-sprite-packs: パックも同梱するなら(=CloudFront不要のデモ形態)。
-     CloudFront配信にするなら不要で、代わりに環境変数を設定
-3. 環境変数(Vercelのプロジェクト設定):
-   - `NEXT_PUBLIC_SPRITE_PACK_BASE` … CloudFrontの /packs(パック同梱なら `/packs`)
-   - `NEXT_PUBLIC_ASSET_BASE` … 個別スプライトをCDN配信する場合のみ(未設定=public/から)
-   - バックエンド(対戦API)を繋ぐ場合はAPI URL系も(CPU戦特化なら不要)
+   - fetch-demo-sprites: `public/sprites/`(ローカルdev用フォールバック。
+     2026-07-10以降は`NEXT_PUBLIC_ASSET_BASE`が既定でCDN(wesnoth-contents-delivery、
+     jsDelivr経由)を指すため無くてもtypecheck/buildは落ちない)
+   - build-sprite-packs(.psp生成)は不要になった。アニメフレームパックは
+     `wesnoth-contents-delivery`にビルド済みのものを置いてあり、
+     `NEXT_PUBLIC_SPRITE_PACK_BASE`の既定値がそれを指す
+3. 環境変数: `NEXT_PUBLIC_SPRITE_PACK_BASE`/`NEXT_PUBLIC_ASSET_BASE`は
+   `next.config.ts`にjsDelivr既定値を設定済みなので、通常は追加設定不要
+   (自前のCDNに差し替えたい場合だけVercelのプロジェクト環境変数で上書きする)。
+   バックエンド(対戦API)を繋ぐ場合はAPI URL系も(CPU戦特化なら不要)
 4. **CPU戦特化リリースならバックエンド設定ゼロで動く**はず(チュートリアルは
    ローカル完結)。ロビー(/)はDynamoDB接続がないと500になるため、リリース形態に
    応じてトップページの差し替えを検討

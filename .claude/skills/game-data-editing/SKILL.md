@@ -69,5 +69,4 @@ description: ゲームデータ(ユニット・地形・陣営・マップ・チ
 
 `lib/content/index.ts` はジオラマ画像の静的import(png)を含むため、
 **tsx実行のNodeスクリプトからはimportできない**。ユニット定義だけ必要なスクリプトは
-`lib/content/units.ts`(png importなし)を参照する(generate-unit-base-images /
-build-sprite-packs がこの方式)。
+`lib/content/units.ts`(png importなし)を参照する(build-sprite-packs がこの方式)。

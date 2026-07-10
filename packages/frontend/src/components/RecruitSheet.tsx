@@ -1,12 +1,12 @@
 "use client";
 
 // 雇用フロー Stage 2: どのユニットを雇うかはヘックス空間から切り離した
-// ボトムシートのカードUIで選ぶ(計画書3.4)。アイコンは組み込みbase立ち絵
-// (UNIT_BASE_IMAGES)を使う。CDN取得を待たずに出せる+雇用前(まだowner確定の
-// アニメスプライトを読む理由がない場面)なので、あえてチームカラー着色はしない
+// ボトムシートのカードUIで選ぶ(計画書3.4)。アイコンはbase立ち絵
+// (UNIT_BASE_IMAGES)を使う。雇用前(まだowner確定のアニメスプライトを
+// 読む理由がない場面)なので、あえてチームカラー着色はしない
 import type { Faction } from "@parle-stroika/core-engine";
 import { useTranslations } from "next-intl";
-import { UNIT_BASE_IMAGES } from "@/generated/unitBaseImages";
+import { UNIT_BASE_IMAGES } from "@/lib/content/unitBaseImages";
 
 // HP/移動力/攻撃力の数値を並べるより、「何が得意なユニットか」を一言で
 // ガイドする方が伝わりやすい、というユーザー方針(2026-07-10)。

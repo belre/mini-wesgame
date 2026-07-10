@@ -2,10 +2,13 @@ import type { TraitConfig } from "../../types";
 
 // 種族ごとの特性プール(計: 13特性)。
 // 排他ルール:
-//   器用(dextrous) = 反乱軍のエルフのみ / 勇敢(fearless) = トロル専用(2026-07-08 ユーザー指定でグールから除外)
+//   器用(dextrous) = 反乱軍のエルフのみ
 //   凡愚・鈍重・非力(dim/slow/weak) = ゴブリンのみ / アンデッド = アンデッドのみ
 //   壮健(healthy) = ナルガン同盟のドワーフのみ
 //   野生(feral) = データ未使用(かつてコウモリにforcedだったが、fly村防御40%<50%でno-opのため撤去。ルールは残置)
+//   勇敢(fearless) = データ未使用(2026-07-10。トロルの説明コストが高い=宣伝デモとして
+//   分かりづらいため撤去。ルールは残置。かつてグールにも付いていたが2026-07-08にトロル専用化、
+//   今回トロルからも外れ完全に無担い手になった)
 //   小物(no_zoc) = どのプールにも入らない。レベル0ユニットへ参照時に暗黙付与される
 //   (traits.tsのeffectiveTraits。保存されず、昇級でlv1になれば自然に外れる=本家準拠)
 
@@ -19,28 +22,18 @@ export const ELF_TRAITS: TraitConfig = {
   picks: 2,
 };
 
-export const MERMAN_TRAITS: TraitConfig = {
-  pool: ["strong", "intelligent", "quick", "resilient"],
-  picks: 2,
-};
-
-export const NAGA_TRAITS: TraitConfig = {
-  pool: ["strong", "intelligent", "quick", "resilient"],
-  picks: 2,
-};
-
-
 export const ORC_TRAITS: TraitConfig = {
   pool: ["strong", "intelligent", "quick", "resilient"],
   picks: 2,
 };
 
-// 勇敢は固定(2026-07-08 ユーザー指定。トロルは常に不利な時間帯補正を受けない)。
-// 残り2枠を strong/quick/resilient から抽選
+// 勇敢(fearless)の強制付与は撤去(2026-07-10。効果の説明が要り宣伝デモとして
+// 分かりづらいため)。picksは1に抑える(2026-07-10。雇用画面で「Slow」と
+// 案内している手前、2枠だとQuick(移動+1)を引く確率が高く"遅い"という
+// 説明と矛盾して見えるユニットが多くなってしまうため)
 export const TROLL_TRAITS: TraitConfig = {
-  forced: ["fearless"],
   pool: ["strong", "quick", "resilient"],
-  picks: 2,
+  picks: 1,
 };
 
 export const GOBLIN_TRAITS: TraitConfig = {

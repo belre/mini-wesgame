@@ -1,9 +1,27 @@
 "use client";
 
 // 雇用フロー Stage 2: どのユニットを雇うかはヘックス空間から切り離した
-// ボトムシートのリストUIで選ぶ(計画書3.4)。
-import { ABILITY_NAMES, SPECIAL_NAMES, type Faction } from "@parle-stroika/core-engine";
+// ボトムシートのカードUIで選ぶ(計画書3.4)。アイコンは組み込みbase立ち絵
+// (UNIT_BASE_IMAGES)を使う。CDN取得を待たずに出せる+雇用前(まだowner確定の
+// アニメスプライトを読む理由がない場面)なので、あえてチームカラー着色はしない
+import type { Faction } from "@parle-stroika/core-engine";
 import { useTranslations } from "next-intl";
+import { UNIT_BASE_IMAGES } from "@/generated/unitBaseImages";
+
+// HP/移動力/攻撃力の数値を並べるより、「何が得意なユニットか」を一言で
+// ガイドする方が伝わりやすい、というユーザー方針(2026-07-10)。
+// 現行ロスター(各陣営4種、game-data-editingスキルの「役割が被らない」構成)に
+// 合わせた手書きの短文。ロスターを増やす際はここにも追記すること
+const UNIT_ROLE_HINTS: Record<string, string> = {
+  spearman: "Strikes first in melee",
+  bowman: "Attacks from range",
+  cavalryman: "Fast, hard-hitting cavalry",
+  mage: "Ranged magic, steady aim",
+  orcish_grunt: "Solid all-around fighter",
+  orcish_archer: "Attacks from range",
+  wolf_rider: "Very fast raider",
+  troll_whelp: "Slow, but heals every turn",
+};
 
 export default function RecruitSheet({
   faction,
@@ -27,38 +45,31 @@ export default function RecruitSheet({
       </div>
       {faction.units
         .filter((u) => faction.recruitableUnitIds.includes(u.id))
-        .map((u) => (
-          <button
-            key={u.id}
-            className="recruit-item"
-            disabled={gold < u.cost}
-            onClick={() => onPick(u.id)}
-          >
-            <span>
-              {u.name}
-              {u.abilities && u.abilities.length > 0 && (
-                <span style={{ color: "#7ec8e3", marginLeft: 6, fontSize: 12 }}>
-                  {u.abilities.map((a) => ABILITY_NAMES[a]).join("・")}
-                </span>
+        .map((u) => {
+          const icon = UNIT_BASE_IMAGES[u.spriteKey];
+          return (
+            <button
+              key={u.id}
+              className="recruit-card"
+              data-unit-def-id={u.id}
+              disabled={gold < u.cost}
+              onClick={() => onPick(u.id)}
+            >
+              {icon ? (
+                <img className="recruit-card-icon" src={icon} alt="" />
+              ) : (
+                <div className="recruit-card-icon" />
               )}
-              <span className="dim" style={{ marginLeft: 8, fontSize: 12 }}>
-                {t("statLine", { hp: u.hp, move: u.movement.points })}
-                {u.movement.type === "fly" ? t("flying") : ""} /{" "}
-                {u.attacks
-                  .map(
-                    (a) =>
-                      `${a.name}${a.damage}×${a.count}${
-                        a.specials?.length
-                          ? `[${a.specials.map((s) => SPECIAL_NAMES[s]).join("・")}]`
-                          : ""
-                      }`,
-                  )
-                  .join("・")}
+              <span className="recruit-card-body">
+                {u.name}
+                <span className="dim" style={{ marginLeft: 8, fontSize: 12 }}>
+                  {UNIT_ROLE_HINTS[u.id] ?? ""}
+                </span>
               </span>
-            </span>
-            <span style={{ color: "var(--gold)", whiteSpace: "nowrap" }}>{u.cost}</span>
-          </button>
-        ))}
+              <span className="recruit-card-cost">{u.cost}</span>
+            </button>
+          );
+        })}
     </div>
   );
 }

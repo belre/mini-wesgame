@@ -3,7 +3,7 @@
 // を複数ユニットで使い回すためのもの。
 
 // オーク種族の山岳適性(2026-07-08 ユーザー実測)。オークは山岳民族という設定で、
-// walk型のオーク・トロル・ナーガ系全ユニットが岩場(mountains)に例外的に進入できる
+// walk型のオーク・トロル系全ユニットが岩場(mountains)に例外的に進入できる
 // (歩兵は通常不可の壁。コスト2・防御60%で共通)
 export const ORC_MOUNTAIN_MOVE: Record<string, number> = { mountains: 2 };
 const ORC_MOUNTAIN_DEFENSE: Record<string, number> = { mountains: 60 };
@@ -40,29 +40,4 @@ export const ORC_TROLL_DEFENSE_OVERRIDES: Record<string, number> = {
   village: 40,
   castle: 40,
   keep: 40,
-};
-
-// ナーガ系(naga_fighter/naga_warrior)。swim型だが陸地も広く這い進める設定で、
-// 岩場にも例外的に進入できる(2026-07-08 ユーザー実測。両レベル共通分)
-export const NAGA_MOVE_OVERRIDES: Record<string, number> = {
-  hills: 3,
-  mountains: 5,
-  forest: 3,
-  castle: 2,
-  keep: 2,
-  tochka: 2,
-  sand: 1,
-  desert: 1,
-  cave: 2,
-};
-// 防御の両レベル共通分(草原・岩場はレベルで差があるため各ユニット側で追加指定する)
-export const NAGA_DEFENSE_OVERRIDES_BASE: Record<string, number> = {
-  hills: 40,
-  forest: 40,
-  castle: 50,
-  keep: 50,
-  tochka: 40,
-  sand: 50,
-  desert: 50,
-  cave: 40,
 };

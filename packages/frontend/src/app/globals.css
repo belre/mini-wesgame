@@ -128,6 +128,216 @@ select {
   color: var(--gold);
 }
 
+/* ---- 陣営選択画面(2026-07-10) ---- */
+
+.faction-select-screen {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 16px;
+  text-align: center;
+}
+
+.faction-select-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 140px;
+  padding: 16px 12px;
+  border-radius: 20px;
+  font-size: 15px;
+}
+
+.faction-select-btn img {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+}
+
+/* ---- 試合終了オーバーレイ(2026-07-10) ---- */
+
+.game-over-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(12, 15, 20, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.game-over-card {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 16px;
+  padding: 28px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 16px;
+  min-width: min(320px, 80vw);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.game-over-title {
+  font-size: 22px;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* 1行1アクションのバナー風ボタン列(2026-07-10) */
+.game-over-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.game-over-banner-btn {
+  width: 100%;
+  text-align: center;
+  border-radius: 999px;
+  padding: 12px 20px;
+  font-size: 15px;
+}
+
+/* 広告枠モック(2026-07-10。docs/backlog.mdの広告モデル案向けレイアウト検討用) */
+.game-over-ad-mocks {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 16px;
+  margin-top: 4px;
+  border-top: 1px dashed var(--panel-border);
+}
+
+.game-over-ad-mock {
+  width: 100%;
+  height: 50px;
+  border: 1px dashed var(--panel-border);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* 実データ風の1枠(アイコン+タイトル+サブテキスト・リンク付き)。他2枠はプレースホルダーのまま */
+.game-over-ad-mock--filled {
+  border-style: solid;
+  justify-content: flex-start;
+  gap: 10px;
+  padding: 0 10px;
+  background: rgba(255, 255, 255, 0.05);
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.game-over-ad-mock--filled:hover {
+  border-color: var(--accent);
+}
+
+.game-over-ad-mock--filled img {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  flex-shrink: 0;
+}
+
+.game-over-ad-mock-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.game-over-ad-mock-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.game-over-ad-mock-sub {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+/* Rematchボタンと並べる本家Wesnothへのクレジットリンク(通常のbuttonと見た目を揃える) */
+.link-button {
+  font: inherit;
+  color: inherit;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.link-button:hover {
+  border-color: var(--accent);
+}
+
+/* ---- 1ターン目クリックガイド(2026-07-10) ---- */
+
+/* スポットライトの「幕」。4枚を組み合わせてホール(対象の周り)以外を覆う。
+   pointer-eventsをallにして背後への操作を封じる */
+.guide-scrim {
+  position: fixed;
+  z-index: 100;
+  background: rgba(8, 10, 14, 0.72);
+  pointer-events: all;
+}
+
+/* ホールの縁の視認用リング(操作はホール本来の要素が受けるのでpointer-events:none) */
+.guide-hole-ring {
+  position: fixed;
+  z-index: 101;
+  border-radius: 10px;
+  border: 3px solid #ffd75e;
+  box-shadow: 0 0 0 9999px transparent, 0 0 16px rgba(255, 215, 94, 0.6);
+  pointer-events: none;
+  animation: ps-tap-fx-pulse 1.1s ease-in-out infinite;
+}
+
+@keyframes ps-tap-fx-pulse {
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.guide-message {
+  position: fixed;
+  z-index: 102;
+  top: 96px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: min(92vw, 420px);
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-size: 14px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+}
+
 /* ---- 対戦盤面 ---- */
 
 .match-screen {
@@ -179,19 +389,49 @@ select {
   overflow-y: auto;
 }
 
+/* How to Play専用(2026-07-10): タブ+SVG図解+説明文でやや縦に長いので、
+   通常の.sheetより高さの余裕を広めに取る */
+.rules-sheet {
+  max-height: 62dvh;
+}
+
 .sheet h3 {
   font-size: 14px;
   color: var(--text-dim);
   margin-bottom: 10px;
 }
 
-.recruit-item {
+/* 雇用リストのカード(2026-07-10)。lobbyの.match-list-itemと同じ背景トーンで
+   「一覧内の1項目」という見た目を揃える */
+.recruit-card {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 10px;
   width: 100%;
   text-align: left;
-  margin-bottom: 6px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  border-radius: 12px;
+  background: #171d26;
+}
+
+.recruit-card-icon {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  flex-shrink: 0;
+}
+
+.recruit-card-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.recruit-card-cost {
+  color: var(--gold);
+  white-space: nowrap;
+  font-weight: 600;
 }
 
 .confirm-bar {
@@ -205,10 +445,12 @@ select {
   padding: 10px 14px;
 }
 
+/* FAB・?ボタンは右上に配置(2026-07-10)。右下だとHow to Play等の下シートと
+   スマホ実機で干渉して押しづらくなるため、下シート類とは反対の右上に固定する */
 .fab {
   position: absolute;
   right: 16px;
-  bottom: 88px;
+  top: 16px;
   z-index: 20;
   width: 52px;
   height: 52px;
@@ -220,10 +462,52 @@ select {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
 }
 
+/* ルール早見ボタン。FABの左隣に常設(同じ高さ・一回り小さめ) */
+.help-fab {
+  position: absolute;
+  right: 78px;
+  top: 16px;
+  z-index: 20;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+/* How to Play表示中は盤面(雇用・移動)だけでなく、進行中の下書きUI
+   (移動確認バー・戦闘プレビュー・雇用シート等、.overlay-bottomのz10)も
+   隠さずそのまま・ただし操作だけ封じる(2026-07-10。ユーザー方針:
+   「隠すのではなく後ろを操作できないようにする」が最も素直)。
+   RulesPanel自体だけ.rules-panel-wrapでこのscrimより前面に出す */
+.rules-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 15;
+  background: rgba(0, 0, 0, 0.4);
+  pointer-events: all;
+}
+
+/* .overlay-bottomの外(scrimの兄弟)に置くので、位置決めもここで持つ
+   (.overlay-bottomのposition:absolute+z-indexが作るスタッキングコンテキストに
+   巻き込まれるのを避けるため。子にz-indexを盛るだけでは脱出できない) */
+.rules-panel-wrap {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 16;
+  padding: 12px;
+}
+
 .fab-menu {
   position: absolute;
   right: 16px;
-  bottom: 148px;
+  top: 76px;
   z-index: 20;
   display: flex;
   flex-direction: column;

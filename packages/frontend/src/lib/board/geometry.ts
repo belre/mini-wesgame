@@ -10,6 +10,12 @@ export const S = 36;
 export const HEX_WIDTH_PX = 2 * S;
 const SQRT3 = Math.sqrt(3);
 
+// ヘックスのDOM要素id(クリックガイドのスポットライト・zoomToElementでの
+// カメラ中心合わせが参照する安定キー。マップサイズに依存しない)
+export function hexElementId(c: HexCoord): string {
+  return `hex-${c.x}-${c.y}`;
+}
+
 export function hexCenter(c: HexCoord): { cx: number; cy: number } {
   return {
     cx: S + 1.5 * S * c.x,

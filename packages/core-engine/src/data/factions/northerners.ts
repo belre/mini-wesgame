@@ -1,8 +1,6 @@
 import type { Faction } from "../../types";
-import { NAGA_TRAITS, ORC_TRAITS, TROLL_TRAITS, HUMAN_TRAITS } from "./traitPresets";
+import { ORC_TRAITS, TROLL_TRAITS, HUMAN_TRAITS } from "./traitPresets";
 import {
-  NAGA_DEFENSE_OVERRIDES_BASE,
-  NAGA_MOVE_OVERRIDES,
   ORC_INFANTRY_DEFENSE_OVERRIDES,
   ORC_INFANTRY_MOVE_OVERRIDES,
   ORC_TROLL_DEFENSE_OVERRIDES,
@@ -12,19 +10,24 @@ import {
 } from "./terrainPresets";
 
 // 北方連合(オーク)。フェーズ2以降で解放予定だがデータは先に揃える。
-// 凡愚・鈍重・非力(dim/slow/weak)はゴブリンのみ、勇敢(fearless)はトロル(とグール)のみ。
+// 凡愚・鈍重・非力(dim/slow/weak)はゴブリンのみ。
 export const NORTHERNERS: Faction = {
   id: "northerners",
   name: "Orcs",
   defaultLeaderUnitId: "orcish_warrior",
   assetPackUrl: "/assets/packs/northerners.json",
+  // 宣伝デモ向けに「役割が被らない4種」へ絞り込み(2026-07-10)。
+  // 兵卒(標準戦士)・弓兵(遠隔)・ウルフライダー(高機動)・トロル=troll_whelp(自動回復)
   recruitableUnitIds: [
     "orcish_grunt",
     "orcish_archer",
-    "orcish_spy",
     "wolf_rider",
-    "troll_whelp",
-    "naga_fighter"
+    "troll_whelp"
+  ],
+  // CPU(人間選択時の敵)は兵卒・弓兵の基本パターンで固定
+  cpuRecruitableUnitIds: [
+    "orcish_grunt",
+    "orcish_archer"
   ],
   availableLeaderUnitIds:[
     "orcish_warrior",
@@ -87,8 +90,8 @@ export const NORTHERNERS: Faction = {
       attacks: [
         { id: "dagger", name: "Dagger", damage: 4, count: 3, type: "blade", range: "melee" },
         { id: "bow", name: "Bow", damage: 8, count: 3, type: "pierce", range: "ranged" },
-        { id: "fire_arrow", name: "Fire Arrow", damage: 10, count: 2, type: "fire", range: "ranged"}
       ],
+      // fire_arrow撤去(2026-07-10): orcish_archer側と同じ理由(fireが刺さる相手がいない)
       resistances: {},
       alignment: "chaotic",
       cost: 26,
@@ -171,24 +174,6 @@ export const NORTHERNERS: Faction = {
       traitConfig: TROLL_TRAITS,
     },
     {
-      id: "naga_warrior",
-      name: "Naga",
-      level: 2,
-      hp: 43,
-      // ナーガ系(2026-07-08 ユーザー実測): 陸地も広く這い進める。岩場にも例外的に進入できる。
-      // 草原・岩場防御はLv1より一段強い
-      movement: { type: "swim", points: 7, terrainOverrides: NAGA_MOVE_OVERRIDES },
-      defenseOverrides: { ...NAGA_DEFENSE_OVERRIDES_BASE, grassland: 40, mountains: 50 },
-      attacks: [
-        { id: "sword", name: "Sword", damage: 6, count: 5, type: "blade", range: "melee" }, // 2026-07-08 ユーザー指定(旧7x4→7x5は強すぎたため6x5に調整)
-      ],
-      resistances: {},
-      alignment: "neutral",
-      cost: 27,
-      spriteKey: "units/northerners/naga_warrior",
-      traitConfig: NAGA_TRAITS,
-    },
-    {
       id: "orcish_grunt",
       name: "Warrior", // 2026-07-08 ユーザー指定: 隊長候補のLv2が「兵卒」だと違和感があるため改名(id不変)
       level: 1,
@@ -218,8 +203,9 @@ export const NORTHERNERS: Faction = {
       attacks: [
         { id: "dagger", name: "Dagger", damage: 3, count: 2, type: "blade", range: "melee" },
         { id: "bow", name: "Bow", damage: 5, count: 3, type: "pierce", range: "ranged" },
-        { id: "fire_arrow", name: "Fire Arrow", damage: 7, count: 2, type: "fire", range: "ranged"}
       ],
+      // 火矢(fire属性)は2026-07-10撤去: 現行ロスターにfire耐性/弱点を持つ
+      // ユニットが存在せず、pierceと数値上区別が付かない冗長な3本目だったため
       resistances: {},
       alignment: "chaotic",
       cost: 14,
@@ -295,28 +281,9 @@ export const NORTHERNERS: Faction = {
       alignment: "chaotic",
       cost: 13,
       maxXp: 36, // 2026-07-08 ユーザー指定
-      spriteKey: "units/northerners/troll_grunt",
+      spriteKey: "units/northerners/troll_whelp",
       traitConfig: TROLL_TRAITS, // 勇敢の可能性
       advancesTo: ["troll"],
     },
-    {
-      id: "naga_fighter",
-      name: "Naga",
-      level: 1,
-      hp: 33,
-      // ナーガ系(2026-07-08 ユーザー実測): 陸地も広く這い進める。岩場にも例外的に進入できる
-      movement: { type: "swim", points: 7, terrainOverrides: NAGA_MOVE_OVERRIDES },
-      defenseOverrides: { ...NAGA_DEFENSE_OVERRIDES_BASE, mountains: 40 },
-      attacks: [
-        { id: "sword", name: "Sword", damage: 4, count: 4, type: "blade", range: "melee" },
-      ],
-      resistances: {},
-      alignment: "neutral",
-      cost: 14,
-      maxXp: 32, // 2026-07-08 ユーザー指定
-      spriteKey: "units/northerners/naga_fighter",
-      traitConfig: NAGA_TRAITS,
-      advancesTo: ["naga_warrior"]
-    }
   ],
 };

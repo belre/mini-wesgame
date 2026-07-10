@@ -54,8 +54,6 @@
     "winnerSuffix": "({name} won)",
     "yourTurn": "Your turn",
     "opponentTurn": "{name}'s turn (check back later)",
-    "hexSizeReadout": "1 hex ≈ {px}px",
-    "hexSizePhysical": " / physical {physPx}px (asset ×{scale})",
     "endTurnConfirmMsg": "{count} unit(s) haven't acted yet. End turn anyway?",
     "endTurnConfirmButton": "End turn",
     "cancel": "Cancel",
@@ -159,18 +157,12 @@
   "RecruitSheet": {
     "heading": "Choose a unit to recruit",
     "goldLabel": "(Gold {gold})",
-    "closeButton": "Close",
-    "statLine": "HP{hp} / Move {move}",
-    "flying": "(flying)"
+    "closeButton": "Close"
   },
   "UnitInfoPanel": {
-    "mine": "Mine",
-    "enemy": "Enemy",
     "recruitButton": "Recruit",
     "closeButton": "Close",
     "moveLabel": "Move",
-    "nextLevel": "(next: {names})",
-    "nextLevelDefault": "(next: max HP +3)",
     "flying": "(flying)",
     "swimming": "(swimming)",
     "melee": "melee",

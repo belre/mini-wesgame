@@ -25,8 +25,6 @@ export const duelist_   = (n: string) => `${ASSET_BASE}/sprites/duelist/${n}`;
 export const horseman_  = (n: string) => `${ASSET_BASE}/sprites/horseman/${n}`;
 export const mage_      = (n: string) => `${ASSET_BASE}/sprites/mage/${n}`;
 export const halo_      = (n: string) => `${ASSET_BASE}/sprites/halo/${n}`;
-export const merman_    = (n: string) => `${ASSET_BASE}/sprites/merman/${n}`;
-export const mermanT_   = (n: string) => `${ASSET_BASE}/sprites/merman_triton/${n}`;
 export const projectile = (name: string) => `${ASSET_BASE}/sprites/projectiles/${name}`;
 
 // {MAGIC_MISSILE}: 魔術師系共通の魔法弾(光球)。杖先から一度後方へ引き込まれ、

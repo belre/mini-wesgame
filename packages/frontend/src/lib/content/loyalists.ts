@@ -1,7 +1,7 @@
 // 忠誠軍のスプライト定義(コンテンツ)。
 // WML転記元は各エントリーのコメント参照。追加手順は docs/sprite_guide.md
 import type { UnitSpriteDef } from "../anim/model";
-import { spearman, bowman_, cavalryman_, fencer_, heavyInf, lieu, swordsman_, whiteMage, pikeman_, longbow, shocktpr, dragoon_, lancer_, duelist_, horseman_, mage_, halo_, mermanT_, merman_, projectile, MAGIC_MISSILE_ORB } from "./shared";
+import { spearman, bowman_, cavalryman_, fencer_, heavyInf, lieu, swordsman_, whiteMage, pikeman_, longbow, shocktpr, dragoon_, lancer_, duelist_, horseman_, mage_, halo_, projectile, MAGIC_MISSILE_ORB } from "./shared";
 
 export const SPRITES: Record<string, UnitSpriteDef> = {
   "units/loyalists/spearman": {
@@ -602,54 +602,6 @@ export const SPRITES: Record<string, UnitSpriteDef> = {
       },
     },
     defend: { reaction: mage_("mage-defend.png") },
-  },
-
-  "units/loyalists/merman_triton": {
-    base: mermanT_("triton.png"),
-    standing: [{ image: mermanT_("triton.png"), duration: 500 }],
-    attacks: {
-      // trident: start_time=-200, base画像のみ(専用フレームなし)
-      // triton.png:[75,175,100]
-      trident: {
-        startTime: -200,
-        frames: [
-          { image: mermanT_("triton.png"), duration: 75 },
-          { image: mermanT_("triton.png"), duration: 175 },
-          { image: mermanT_("triton.png"), duration: 100 },
-        ],
-      },
-      // sword: 上位データ(merman_triton)の第2近接。専用フレームが無いためtridentと同一
-      sword: {
-        startTime: -200,
-        frames: [
-          { image: mermanT_("triton.png"), duration: 75 },
-          { image: mermanT_("triton.png"), duration: 175 },
-          { image: mermanT_("triton.png"), duration: 100 },
-        ],
-      },
-    },
-    defend: { reaction: mermanT_("triton-defend2.png") },
-  },
-
-  "units/loyalists/merman": {
-    base: merman_("warrior.png"),
-    standing: [{ image: merman_("warrior.png"), duration: 500 }],
-    attacks: {
-      // trident: start_time=-450, offset=0~0.3,0.3~0 (9フレーム×100ms=900ms)
-      // warrior-attack-[1~9]:100 (Merfolk_Warrior.cfg)
-      trident: {
-        startTime: -450,
-        offset: [
-          { from: 0,   to: 0.3, duration: 450 },
-          { from: 0.3, to: 0,   duration: 450 },
-        ],
-        frames: Array.from({ length: 9 }, (_, i) => ({
-          image: merman_(`warrior-attack-${i + 1}.png`),
-          duration: 100,
-        })),
-      },
-    },
-    defend: { reaction: merman_("warrior-defend-2.png") },
   },
 
 };

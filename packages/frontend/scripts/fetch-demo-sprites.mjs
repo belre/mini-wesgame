@@ -12,11 +12,9 @@ const BASE      = "https://raw.githubusercontent.com/wesnoth/wesnoth/master/data
 export const ROOT      = join(dirname(fileURLToPath(import.meta.url)), "..", "public", "sprites");
 const LOYALISTS = `${BASE}/human-loyalists`;
 const MAGI      = `${BASE}/human-magi`;
-const MERFOLK   = `${BASE}/merfolk`;
 const ORCS      = `${BASE}/orcs`;
 const GOBLINS   = `${BASE}/goblins`;
 const TROLLS    = `${BASE}/trolls`;
-const NAGAS     = `${BASE}/nagas`;
 const PROJ      = "https://raw.githubusercontent.com/wesnoth/wesnoth/master/data/core/images/projectiles";
 const HALO      = "https://raw.githubusercontent.com/wesnoth/wesnoth/master/data/core/images/halo";
 const TERRAIN   = "https://raw.githubusercontent.com/wesnoth/wesnoth/master/data/core/images/terrain";
@@ -312,35 +310,6 @@ export const ASSET_GROUPS = [
     ],
   },
 
-  // ----------------------------------------------------------------
-  // マーマンの戦士 (merman_fighter) — merfolk/ warrior系統を使用
-  // ----------------------------------------------------------------
-  {
-    base: MERFOLK,
-    out: join(ROOT, "merman"),
-    files: [
-      { remote: "warrior.png",          local: "warrior.png" },
-      ...Array.from({ length: 9 }, (_, i) => ({
-        remote: `warrior-attack-${i + 1}.png`,
-        local:  `warrior-attack-${i + 1}.png`,
-      })),
-      { remote: "warrior-defend-2.png", local: "warrior-defend-2.png" },
-    ],
-  },
-
-  // ----------------------------------------------------------------
-  // トリトンの戦士 (merman_triton) — merfolk/
-  // ----------------------------------------------------------------
-  {
-    base: MERFOLK,
-    out: join(ROOT, "merman_triton"),
-    files: [
-      { remote: "triton.png",         local: "triton.png" },
-      { remote: "triton-defend1.png", local: "triton-defend1.png" },
-      { remote: "triton-defend2.png", local: "triton-defend2.png" },
-    ],
-  },
-
   // ================================================================
   // NORTHERNERS (北方陣営)
   // ================================================================
@@ -485,41 +454,16 @@ export const ASSET_GROUPS = [
     ],
   },
   {
+    // トロルの子供(troll_whelp)。旧実装は誤って"grunt"(本家では成体トロルの絵)を
+    // 使っていたため、troll(great-troll)へ昇格しても見た目がほぼ変わらなかった。
+    // 本家の幼体絵(whelp)に差し替える(2026-07-10)
     base: TROLLS,
-    out: join(ROOT, "troll_grunt"),
+    out: join(ROOT, "troll_whelp"),
     files: [
-      "grunt.png", "grunt-defend.png",
-      ...Array.from({ length: 4 }, (_, i) => `grunt-attack-${i + 1}.png`),
-    ],
-  },
-  // naga は nagas/fighter/ サブディレクトリ
-  {
-    base: NAGAS,
-    out: join(ROOT, "naga_fighter"),
-    files: [
-      { remote: "fighter/fighter.png",          local: "fighter.png" },
-      { remote: "fighter/fighter-defend-1.png", local: "fighter-defend-1.png" },
-      ...Array.from({ length: 4 }, (_, i) => ({
-        remote: `fighter/fighter-melee-${i + 1}.png`,
-        local:  `fighter-melee-${i + 1}.png`,
-      })),
-      // idle: fighter-idle-[1~8,...]
-      ...Array.from({ length: 8 }, (_, i) => ({
-        remote: `fighter/fighter-idle-${i + 1}.png`,
-        local:  `fighter-idle-${i + 1}.png`,
-      })),
-    ],
-  },
-  {
-    base: NAGAS,
-    out: join(ROOT, "naga_warrior"),
-    files: [
-      { remote: "fighter/warrior.png",          local: "warrior.png" },
-      { remote: "fighter/warrior-defend-1.png", local: "warrior-defend-1.png" },
-      ...Array.from({ length: 4 }, (_, i) => ({
-        remote: `fighter/warrior-melee-${i + 1}.png`,
-        local:  `warrior-melee-${i + 1}.png`,
-      })),
+      "whelp.png", "whelp-defend.png",
+      ...Array.from({ length: 3 }, (_, i) => `whelp-attack-${i + 1}.png`),
+      // idle_anim(Whelp.cfg): grunt(成体troll)には無いがwhelpだけ本家に存在するアイドル
+      ...Array.from({ length: 7 }, (_, i) => `whelp-idle-${i + 1}.png`),
     ],
   },
   // ----------------------------------------------------------------
@@ -531,8 +475,7 @@ export const ASSET_GROUPS = [
     files: [
       "spear-n.png",        // spearman javelin
       "missile-n.png",      // bowman/longbowman/lieutenant/dragoon/duelist crossbow
-      // オークの火矢・投げナイフ・投げ網
-      "missile-fire-n.png",
+      // オークの投げナイフ・投げ網
       "dagger-n.png",
       "web.png",
     ],

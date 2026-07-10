@@ -328,8 +328,12 @@ export default function CutInStage({
                     pointerEvents="none"
                     // 周辺ユニット(書き割り)は気配程度に減光し、一騎打ちの2体へ視線を集める。
                     // ただし実際に統率ボーナスを効かせている提供元本人は減光しない
-                    // (機能していることが分かった方が良いというユーザー判断。2026-07-09)
-                    opacity={isCombatant || activeLeadershipSupporterIds.has(u.id) ? 1 : 0.4}
+                    // (機能していることが分かった方が良いというユーザー判断。2026-07-09)。
+                    // 撃破された側はさらにfx.opacityOverridesでフェードアウトする(2026-07-10)
+                    opacity={
+                      (isCombatant || activeLeadershipSupporterIds.has(u.id) ? 1 : 0.4) *
+                      (fx.opacityOverrides.get(u.id) ?? 1)
+                    }
                   >
                     {/* 統率ボーナスの受益者へのフォーカス(2026-07-09)。提供元の周辺ユニットを
                         探させるより、恩恵を受ける本人を光らせた方が分かりやすいというユーザー判断。

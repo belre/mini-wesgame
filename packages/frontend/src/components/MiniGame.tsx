@@ -39,6 +39,13 @@ function GameSession({
   onExit: () => void;
 }) {
   const cpuFactionId = factionId === HUMAN_FACTION_ID ? ORC_FACTION_ID : HUMAN_FACTION_ID;
+  // 1戦目の固定パターン(2026-07-10 ユーザー決定): 足の速いユニット(竜騎兵・狼乗り)は
+  // 序盤マップでは決着が早まりすぎるため外す。陣営データは変えず、モード側の
+  // 雇用制限(recruitUnitIds)で絞る。プレイヤー側は+1種(魔術師/トロル)の変化枠つき
+  const RECRUITS: Record<string, { player: string[]; cpu: string[] }> = {
+    [HUMAN_FACTION_ID]: { player: ["spearman", "bowman", "mage"], cpu: ["orcish_grunt", "orcish_archer"] },
+    [ORC_FACTION_ID]: { player: ["orcish_grunt", "orcish_archer", "troll_whelp"], cpu: ["spearman", "bowman"] },
+  };
   const config = useMemo(
     () => ({
       userId: "player",
@@ -46,8 +53,11 @@ function GameSession({
       cpuFactionId,
       mapId: "valley_crossing",
       fog: true, // 演出用(2026-07-10): 本家Wesnothらしさを見せる要素として常時有効
-      maxTurns: 4, // TODO(テスト用): 動作確認スコープを少し延長。検証が終わったら外す
+      maxTurns: 30,
+      recruitUnitIds: RECRUITS[factionId].player,
+      cpuRecruitUnitIds: RECRUITS[factionId].cpu,
     }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [factionId, cpuFactionId],
   );
   const { game, board, submit, cpuEvents } = useLocalCpuGame(config);

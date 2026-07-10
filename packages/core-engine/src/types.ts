@@ -225,6 +225,8 @@ export interface PlayerState {
   userId: string;
   factionId: string;
   gold: number;
+  // 雇用可能ユニットの上書き(任意)。未指定は陣営のrecruitableUnitIds(モード制限用)
+  recruitUnitIds?: string[];
 }
 
 export type MatchStatus = "active" | "finished";

@@ -90,6 +90,9 @@ export interface CreateMatchParams {
     userId: string;
     factionId: string;
     leaderUnitId?: string; // 未指定は陣営デフォルト(faction.leaderUnitId)
+    // 雇用可能ユニットの上書き(任意)。未指定は陣営のrecruitableUnitIds。
+    // ゲームモードによる雇用制限(例: 1戦目は歩兵のみ)に使う
+    recruitUnitIds?: string[];
   }[];
   mapId: string;
   scheduleId?: string;
@@ -244,6 +247,7 @@ export function createInitialState(
       userId: p.userId,
       factionId: p.factionId,
       gold: STARTING_GOLD,
+      recruitUnitIds: p.recruitUnitIds,
     })),
     units,
     villageOwners: {},
@@ -583,6 +587,10 @@ export function applyAction(
       const def = faction.units.find((u) => u.id === action.unitDefId);
       if (!def) {
         throw new EngineError("not_recruitable", "この陣営では雇用できないユニットです");
+      }
+      // モードによる雇用制限(PlayerState.recruitUnitIds。未指定は制限なし)
+      if (player.recruitUnitIds && !player.recruitUnitIds.includes(action.unitDefId)) {
+        throw new EngineError("not_recruitable", "この対戦では雇用できないユニットです");
       }
       if (player.gold < def.cost) {
         throw new EngineError("not_enough_gold", "ゴールドが足りません");

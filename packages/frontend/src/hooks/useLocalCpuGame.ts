@@ -33,6 +33,8 @@ export interface LocalCpuGameConfig {
   mapId: string;
   fog?: boolean;
   maxTurns?: number; // 最長ターン数(任意)。超過時は引き分けで終了
+  recruitUnitIds?: string[]; // 人間側の雇用制限(モード用。未指定は陣営既定)
+  cpuRecruitUnitIds?: string[]; // CPU側の雇用制限(同上)
 }
 
 function newGame(config: LocalCpuGameConfig): MatchState {
@@ -43,8 +45,13 @@ function newGame(config: LocalCpuGameConfig): MatchState {
           userId: config.userId,
           factionId: config.factionId,
           leaderUnitId: config.leaderUnitId,
+          recruitUnitIds: config.recruitUnitIds,
         },
-        { userId: CPU_USER_ID, factionId: config.cpuFactionId },
+        {
+          userId: CPU_USER_ID,
+          factionId: config.cpuFactionId,
+          recruitUnitIds: config.cpuRecruitUnitIds,
+        },
       ],
       mapId: config.mapId,
       fog: config.fog,

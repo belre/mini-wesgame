@@ -968,6 +968,7 @@ function BoardScreen(
             <RecruitSheet
               faction={myFaction}
               gold={myPlayer.gold}
+              recruitUnitIds={myPlayer.recruitUnitIds}
               onPick={(unitDefId) => setMode({ kind: "recruitPlace", unitDefId })}
               onClose={() => setMode({ kind: "idle" })}
             />

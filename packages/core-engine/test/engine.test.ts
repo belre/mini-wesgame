@@ -147,6 +147,34 @@ describe("applyAction: move", () => {
 });
 
 describe("applyAction: recruit", () => {
+  it("モードの雇用制限(recruitUnitIds): リスト外は拒否・リスト内は雇用できる", () => {
+    const state = createInitialState(
+      {
+        players: [
+          { userId: P0, factionId: "loyalists", recruitUnitIds: ["bowman"] },
+          { userId: P1, factionId: "northerners" },
+        ],
+        mapId: "valley_crossing",
+      },
+      () => 0,
+    );
+    expect(() =>
+      applyAction(
+        state,
+        P0,
+        { type: "recruit", unitDefId: "spearman", target: { x: 1, y: 1 } },
+        alwaysHit,
+      ),
+    ).toThrow(/雇用できない/);
+    const { state: next } = applyAction(
+      state,
+      P0,
+      { type: "recruit", unitDefId: "bowman", target: { x: 1, y: 1 } },
+      alwaysHit,
+    );
+    expect(next.units.some((u) => u.unitDefId === "bowman")).toBe(true);
+  });
+
   it("リーダーがkeepにいれば自軍の城ヘックスに雇用できる", () => {
     const state = newMatch();
     const { state: next } = applyAction(

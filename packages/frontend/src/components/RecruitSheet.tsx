@@ -28,9 +28,12 @@ export default function RecruitSheet({
   gold,
   onPick,
   onClose,
+  recruitUnitIds,
 }: {
   faction: Faction;
   gold: number;
+  // モードによる雇用制限(PlayerState.recruitUnitIds)。未指定は陣営の既定リスト
+  recruitUnitIds?: string[];
   onPick: (unitDefId: string) => void;
   onClose: () => void;
 }) {
@@ -44,7 +47,7 @@ export default function RecruitSheet({
         <button onClick={onClose}>{t("closeButton")}</button>
       </div>
       {faction.units
-        .filter((u) => faction.recruitableUnitIds.includes(u.id))
+        .filter((u) => (recruitUnitIds ?? faction.recruitableUnitIds).includes(u.id))
         .map((u) => {
           const icon = UNIT_BASE_IMAGES[u.spriteKey];
           return (

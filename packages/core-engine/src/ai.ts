@@ -102,7 +102,12 @@ export function chooseCpuAction(state: MatchState, rng: Rng): Action {
     const freeCastle = meta.castlesByPlayer[me].find(
       (c) => !state.units.some((u) => hexEquals(u.pos, c)),
     );
-    const affordable = (faction.cpuRecruitableUnitIds ?? faction.recruitableUnitIds)
+    // モード制限(PlayerState.recruitUnitIds)があれば最優先で従う
+    const recruitPool =
+      state.players[me].recruitUnitIds ??
+      faction.cpuRecruitableUnitIds ??
+      faction.recruitableUnitIds;
+    const affordable = recruitPool
       .map((id) => faction.units.find((u) => u.id === id))
       .filter((def) => def !== undefined && def.cost <= player.gold);
     if (freeCastle && affordable.length > 0) {

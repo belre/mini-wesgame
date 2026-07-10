@@ -5,7 +5,7 @@ import Providers from "./providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Parle-Stroika",
+  title: "Mini Wesgame",
   description: "非同期マルチプレイのターン制ウォーゲーム",
 };
 

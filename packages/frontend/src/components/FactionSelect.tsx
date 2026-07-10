@@ -19,7 +19,7 @@ export default function FactionSelect({
 }) {
   return (
     <div className="faction-select-screen">
-      <h1 style={{ fontSize: 20 }}>mini-wesgame</h1>
+      <h1 style={{ fontSize: 20 }}>Mini Wesgame</h1>
       <p className="dim" style={{ fontSize: 13 }}>Choose your faction</p>
       <div className="row" style={{ gap: 16, justifyContent: "center" }}>
         {OPTIONS.map((factionId) => {

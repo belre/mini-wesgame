@@ -54,8 +54,6 @@
     "winnerSuffix": "({name} won)",
     "yourTurn": "Your turn",
     "opponentTurn": "{name}'s turn (check back later)",
-    "hexSizeReadout": "1 hex ≈ {px}px",
-    "hexSizePhysical": " / physical {physPx}px (asset ×{scale})",
     "endTurnConfirmMsg": "{count} unit(s) haven't acted yet. End turn anyway?",
     "endTurnConfirmButton": "End turn",
     "cancel": "Cancel",

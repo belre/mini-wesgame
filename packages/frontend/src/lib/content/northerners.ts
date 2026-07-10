@@ -323,56 +323,28 @@ export const SPRITES: Record<string, UnitSpriteDef> = {
     },
     defend: { reaction: `${ASSET_BASE}/sprites/troll/great-troll-defend1.png` },
   },
-  "units/northerners/troll_grunt": {
-    base: `${ASSET_BASE}/sprites/troll_grunt/grunt.png`,
-    standing: [{ image: `${ASSET_BASE}/sprites/troll_grunt/grunt.png`, duration: 500 }],
-    attacks: {
-      fist: {
-        startTime: -250,
-        frames: Array.from({ length: 4 }, (_, i) => ({
-          image: `${ASSET_BASE}/sprites/troll_grunt/grunt-attack-${i + 1}.png`,
-          duration: 100,
-        })),
-      },
-    },
-    defend: { reaction: `${ASSET_BASE}/sprites/troll_grunt/grunt-defend.png` },
-  },
-  "units/northerners/naga_fighter": {
-    base: `${ASSET_BASE}/sprites/naga_fighter/fighter.png`,
-    standing: [{ image: `${ASSET_BASE}/sprites/naga_fighter/fighter.png`, duration: 500 }],
-    // image="fighter-idle-[1~8,7,8,7,8,6,5,1].png:[100*2,350,450,250*2,60*6,350*2,200]"
+  "units/northerners/troll_whelp": {
+    base: `${ASSET_BASE}/sprites/troll_whelp/whelp.png`,
+    standing: [{ image: `${ASSET_BASE}/sprites/troll_whelp/whelp.png`, duration: 500 }],
+    // idle_anim(本家Whelp.cfg): whelp-idle-[1~7,6,7~1]:[100*6,150,175,150,100*6]。
+    // great-troll(昇格後)には本家にidle素材が無いため、whelpだけの演出になる
     idle: [
-      [1, 100], [2, 100], [3, 350], [4, 450], [5, 250], [6, 250],
-      [7, 60], [8, 60], [7, 60], [8, 60], [7, 60], [8, 60],
-      [6, 350], [5, 350], [1, 200],
+      [1, 100], [2, 100], [3, 100], [4, 100], [5, 100], [6, 100], [7, 150],
+      [6, 175], [7, 150], [6, 100], [5, 100], [4, 100], [3, 100], [2, 100], [1, 100],
     ].map(([n, d]) => ({
-      image: `${ASSET_BASE}/sprites/naga_fighter/fighter-idle-${n}.png`,
+      image: `${ASSET_BASE}/sprites/troll_whelp/whelp-idle-${n}.png`,
       duration: d,
     })),
     attacks: {
-      sword: {
+      fist: {
         startTime: -250,
-        frames: Array.from({ length: 4 }, (_, i) => ({
-          image: `${ASSET_BASE}/sprites/naga_fighter/fighter-melee-${i + 1}.png`,
+        frames: Array.from({ length: 3 }, (_, i) => ({
+          image: `${ASSET_BASE}/sprites/troll_whelp/whelp-attack-${i + 1}.png`,
           duration: 100,
         })),
       },
     },
-    defend: { reaction: `${ASSET_BASE}/sprites/naga_fighter/fighter-defend-1.png` },
-  },
-  "units/northerners/naga_warrior": {
-    base: `${ASSET_BASE}/sprites/naga_warrior/warrior.png`,
-    standing: [{ image: `${ASSET_BASE}/sprites/naga_warrior/warrior.png`, duration: 500 }],
-    attacks: {
-      sword: {
-        startTime: -250,
-        frames: Array.from({ length: 4 }, (_, i) => ({
-          image: `${ASSET_BASE}/sprites/naga_warrior/warrior-melee-${i + 1}.png`,
-          duration: 100,
-        })),
-      },
-    },
-    defend: { reaction: `${ASSET_BASE}/sprites/naga_warrior/warrior-defend-1.png` },
+    defend: { reaction: `${ASSET_BASE}/sprites/troll_whelp/whelp-defend.png` },
   },
 
 };

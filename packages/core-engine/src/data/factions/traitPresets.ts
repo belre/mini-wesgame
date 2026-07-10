@@ -19,17 +19,6 @@ export const ELF_TRAITS: TraitConfig = {
   picks: 2,
 };
 
-export const MERMAN_TRAITS: TraitConfig = {
-  pool: ["strong", "intelligent", "quick", "resilient"],
-  picks: 2,
-};
-
-export const NAGA_TRAITS: TraitConfig = {
-  pool: ["strong", "intelligent", "quick", "resilient"],
-  picks: 2,
-};
-
-
 export const ORC_TRAITS: TraitConfig = {
   pool: ["strong", "intelligent", "quick", "resilient"],
   picks: 2,

@@ -758,9 +758,7 @@ const SPRITE_FALLBACK: Record<string, string> = {
   "units/northerners/orcish_pillager":  "/sprites/orcish_pillager/pillager.png",
   "units/northerners/wolf_rider":       "/sprites/wolf_rider/wolf-rider.png",
   "units/northerners/troll":            "/sprites/troll/great-troll.png",
-  "units/northerners/troll_grunt":      "/sprites/troll_grunt/grunt.png",
-  "units/northerners/naga_fighter":     "/sprites/naga_fighter/fighter.png",
-  "units/northerners/naga_warrior":     "/sprites/naga_warrior/warrior.png",
+  "units/northerners/troll_whelp":      "/sprites/troll_whelp/whelp.png",
 };
 
 function getSpriteImg(spriteKey: string): string {

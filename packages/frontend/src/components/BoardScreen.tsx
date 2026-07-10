@@ -6,7 +6,6 @@
 // - 確定済みの盤面: props.board(呼び出し元がAPIキャッシュ or useStateで管理)
 // - 下書き状態: useState(計画書3.3)
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch";
 import {
@@ -44,7 +43,7 @@ import { useMatchAssets } from "@/hooks/useMatchAssets";
 import { useMoveAnimations } from "@/hooks/useMoveAnimations";
 import CombatPreviewPanel from "./CombatPreviewPanel";
 import HexGrid from "./HexGrid";
-import { backNeighborOf, HEX_WIDTH_PX } from "@/lib/board/geometry";
+import { backNeighborOf } from "@/lib/board/geometry";
 import { LoadingScreen } from "./LoadingScreen";
 import RecruitSheet from "./RecruitSheet";
 
@@ -82,7 +81,6 @@ export default function BoardScreen({
   overlay,
   guideHexes,
   extraEvents,
-  onBack,
   onCombatPlayback,
   children,
 }: {
@@ -94,7 +92,6 @@ export default function BoardScreen({
   guideHexes?: ReadonlySet<string>; // ガイド用にハイライトするヘックス(hexKey)
   // 自分の操作以外で発生したイベント(CPUの手など)。movedの実経路アニメに使う
   extraEvents?: { seq: number; events: GameEvent[] } | null;
-  onBack?: () => void; // 未指定ならロビーへのリンク
   // 戦闘再生入力の注入口(producer/consumer分離)。未指定なら従来どおり盤面内アニメで
   // 再生し、指定時は外部レンダラー(カットイン等)へ流して盤面内では再生しない。
   // 入力の組み立て(戦闘前スナップショット・ゴースト・ちらつき対策)はBoardScreenが
@@ -138,12 +135,6 @@ export default function BoardScreen({
     const t = setTimeout(() => setToast(null), 8000);
     return () => clearTimeout(t);
   }, [packWarning]);
-
-  // 推定hexサイズ表示用: 2Dモードのズーム倍率と、物理解像度換算のdevicePixelRatio
-  // (DPRはSSRで読めないためマウント後に反映)
-  const [zoom2d, setZoom2d] = useState(1);
-  const [dpr, setDpr] = useState(1);
-  useEffect(() => setDpr(window.devicePixelRatio), []);
 
   // CPUの手(extraEvents)用の実経路/戦闘登録。自分の手はsubmit内で送信前スナップショットを
   // 使って直接再生する(盤面の更新タイミングに左右されないようにするため)ので、
@@ -614,13 +605,6 @@ export default function BoardScreen({
   return (
     <div className="match-screen">
       <div className="match-topbar">
-        {onBack ? (
-          <button onClick={onBack} style={{ padding: "2px 8px" }}>
-            ←
-          </button>
-        ) : (
-          <Link href="/">←</Link>
-        )}
         <span>
           {t("turnLabel", { turnNumber: board.turnNumber })}
           {board.maxTurns != null && `/${board.maxTurns}`} {TOD_LABEL[tod.id]}
@@ -683,7 +667,6 @@ export default function BoardScreen({
           limitToBounds={false}
           centerOnInit
           doubleClick={{ disabled: true }}
-          onTransformed={(_, state) => setZoom2d(state.scale)}
         >
           <TransformComponent
             wrapperStyle={{ width: "100%", height: "100%" }}
@@ -710,33 +693,24 @@ export default function BoardScreen({
           </TransformComponent>
         </TransformWrapper>
 
-        {/* 推定hexサイズの計測表示: ズーム調整・アセット解像度チューニングの指標。
-            物理px÷72(素材の原寸)がドット絵の引き伸ばし倍率 */}
-        {(() => {
-          const hexPx = HEX_WIDTH_PX * zoom2d;
-          return (
-            <div
-              data-testid="hex-size-readout"
-              style={{
-                position: "absolute",
-                left: 6,
-                bottom: 4,
-                fontSize: 11,
-                color: "#8a94a3",
-                pointerEvents: "none",
-                zIndex: 10,
-                textShadow: "0 1px 2px #000",
-              }}
-            >
-              {t("hexSizeReadout", { px: Math.round(hexPx) })}
-              {dpr !== 1 &&
-                t("hexSizePhysical", {
-                  physPx: Math.round(hexPx * dpr),
-                  scale: (hexPx * dpr / 72).toFixed(1),
-                })}
-            </div>
-          );
-        })()}
+        {/* バージョン表示(2026-07-10): デプロイ先で今どのビルドが動いているかを
+            切り分けるための最小限の手がかり。package.jsonのversion+Vercelの
+            コミットSHA(ローカルdevでは未注入なので省略)。next.config.tsで注入 */}
+        <div
+          style={{
+            position: "absolute",
+            left: 6,
+            bottom: 4,
+            fontSize: 11,
+            color: "#8a94a3",
+            pointerEvents: "none",
+            zIndex: 10,
+            textShadow: "0 1px 2px #000",
+          }}
+        >
+          v{process.env.NEXT_PUBLIC_APP_VERSION}
+          {process.env.NEXT_PUBLIC_COMMIT_SHA && ` · ${process.env.NEXT_PUBLIC_COMMIT_SHA}`}
+        </div>
 
         {/* タップフィードバック(2026-07-09): 有効なユニットタップで選択・攻撃下書き・移動下書き・
             巡回切り替えのいずれかが実際に起きたときだけ、タップ位置に一瞬リングを出す。

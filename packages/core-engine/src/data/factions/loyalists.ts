@@ -1,5 +1,5 @@
 import type { Faction } from "../../types";
-import { HUMAN_TRAITS, MERMAN_TRAITS } from "./traitPresets";
+import { HUMAN_TRAITS } from "./traitPresets";
 
 const HUMAN_RESISTANCES = {
   arcane: 20,
@@ -20,8 +20,7 @@ export const LOYALISTS: Faction = {
     "cavalryman",
     "horseman",
     "mage",
-    "fencer",
-    "merman_fighter"
+    "fencer"
   ],
   availableLeaderUnitIds: [
     "lieutenant",
@@ -213,38 +212,6 @@ export const LOYALISTS: Faction = {
       traitConfig: HUMAN_TRAITS,
     },
     {
-      id: "merman_triton",
-      name: "Merman",
-      level: 2,
-      hp: 50,
-      movement: { type: "swim", points: 6},
-      attacks: [
-        {
-          id: "trident",
-          name: "Trident",
-          damage: 10,
-          count: 3,
-          type: "pierce",
-          range: "melee"
-        },
-        {
-          id: "sword",
-          name: "Sword",
-          damage: 13,
-          count: 2,
-          type: "blade",
-          range: "melee"
-        }
-      ],
-      resistances: {
-        cold: 10 // 2026-07-08 ユーザー指定(旧28%。対リザードシャーマン/暗黒僧の耐性議論の末に決定)
-      },
-      alignment: "lawful",
-      cost: 28, // 2026-07-08 ユーザー指定(旧: merman_fighterと同値14のまま据え置かれていた)
-      spriteKey: "units/loyalists/merman_triton",
-      traitConfig: MERMAN_TRAITS
-    },
-    {
       id: "spearman",
       name: "Spearman",
       level: 1,
@@ -404,32 +371,6 @@ export const LOYALISTS: Faction = {
       spriteKey: "units/loyalists/fencer",
       traitConfig: HUMAN_TRAITS,
       advancesTo: ["duelist"], // 2026-07-08 ユーザー指定: 接続漏れでAMLAになっていたのを修正
-    },
-    {
-      id: "merman_fighter",
-      name: "Merman",
-      level: 1,
-      hp: 36,
-      movement: { type: "swim", points: 6},
-      attacks: [
-        {
-          id: "trident",
-          name: "Trident",
-          damage: 6,
-          count: 3,
-          type: "pierce",
-          range: "melee"
-        }
-      ],
-      resistances: {
-        cold: 10 // 2026-07-08 ユーザー指定(旧20%。対リザードシャーマン/暗黒僧の耐性議論の末に決定)
-      },
-      alignment: "lawful",
-      cost: 14,
-      maxXp: 36, // 2026-07-08 ユーザー指定
-      spriteKey: "units/loyalists/merman",
-      traitConfig: MERMAN_TRAITS,
-      advancesTo: ["merman_triton"]
     },
   ],
 };

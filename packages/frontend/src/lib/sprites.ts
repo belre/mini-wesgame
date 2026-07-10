@@ -6,8 +6,8 @@
 // - コンテンツ(定義表): lib/content/ (陣営別ファイル。SpriteRegistryの実装を提供)
 // - ランタイム(本ファイル): プリロード+Reactフック
 //
-// - プリロードに失敗したユニットは組み込み1枚絵(バンドル同梱のbase立ち絵)に
-//   フォールバックする(それも出せない場合のみ従来の円描画)
+// - アニメ用フレームの読み込み中・失敗時は組み込み1枚絵(バンドル同梱のbase立ち絵)を
+//   表示する(それも出せない場合のみ従来の円描画)
 // - 定義が無いspriteKeyは円描画のまま(ユニットごとに段階的にスプライト化できる)
 import { useEffect, useState } from "react";
 import {
@@ -194,8 +194,10 @@ export function preloadSprite(spriteKey: string, owner: number): Promise<boolean
 const IDLE_MIN_WAIT_MS = 3000;
 const IDLE_RAND_WAIT_MS = 5000;
 
-// プリロード失敗時のフォールバック: 組み込み1枚絵をロード+チームカラー変換して返す。
-// バンドル同梱URLなのでCDN障害時でもアプリが生きていれば成功する
+// フォールバック用: 組み込み1枚絵をロード+チームカラー変換して返す。
+// バンドル同梱URLなのでCDN障害時でもアプリが生きていれば成功する。
+// プリロードと並行して呼ぶことで、アニメ用フレーム揃うまでの間の
+// 表示(円アイコン化)を防ぐプレースホルダーとしても使う
 async function loadBundledBase(spriteKey: string, owner: number): Promise<string | null> {
   const bundled = UNIT_BASE_IMAGES[spriteKey];
   if (!bundled || typeof window === "undefined") return null;
@@ -208,21 +210,25 @@ export function useUnitSprite(spriteKey: string, owner: number): string | null {
   const def = SPRITE_REGISTRY.getUnitSprite(spriteKey);
   const [ready, setReady] = useState(false);
   const [src, setSrc] = useState<string | null>(null);
-  const [fallbackSrc, setFallbackSrc] = useState<string | null>(null);
+  // 初期値から組み込みbase絵(原色)を同期的に採用する。teamColor置換待ちの
+  // 1レンダー分(promise解決を待つ間)だけでも円アイコンに落ちるのを防ぐのが狙い
+  // (baseはWesnothの標準寸法72x72前提なのでimageNaturalSize未確定でも寸法跳ねは起きない)
+  const [fallbackSrc, setFallbackSrc] = useState<string | null>(
+    () => UNIT_BASE_IMAGES[spriteKey] ?? null,
+  );
 
   useEffect(() => {
     if (!def) return;
     let alive = true;
+    setReady(false);
+    setFallbackSrc(UNIT_BASE_IMAGES[spriteKey] ?? null);
+    // チームカラー版に差し替え(プリロードと並行)。原色→着色のワンテンポは許容し、
+    // 円アイコンへの後退だけは避ける
+    void loadBundledBase(spriteKey, owner).then((fallback) => {
+      if (alive && fallback) setFallbackSrc(fallback);
+    });
     void preloadSprite(spriteKey, owner).then((ok) => {
-      if (!alive) return;
-      if (ok) {
-        setReady(true);
-        return;
-      }
-      // アニメ用フレームが揃わない → 組み込み1枚絵(静止)で表示を続ける
-      void loadBundledBase(spriteKey, owner).then((fallback) => {
-        if (alive && fallback) setFallbackSrc(fallback);
-      });
+      if (alive && ok) setReady(true);
     });
     return () => {
       alive = false;

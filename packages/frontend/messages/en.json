@@ -86,19 +86,8 @@
     "cannotRetaliate": "Can't retaliate"
   },
   "CutInMoments": {
-    "closeToDefeatingEnemy": "Almost there — finish it!",
-    "closeToBeingDefeated": "Danger — could go down…",
-    "desperateClash": "Desperate clash",
-    "poisonedAttacker": "Attacking while poisoned",
-    "slowedAttacker": "Attacking while slowed",
-    "plagueAttack": "Plague strike",
-    "poisonAttack": "Poison strike",
-    "poisonStingAttack": "Poison sting",
-    "slowAttack": "Slowing strike",
-    "drainAttack": "Life drain",
     "leadershipBlessing": "Leadership blessing",
     "leaderNearHome": "Leader is near home",
-    "leaderUnderAttack": "Leader under attack",
     "leaderAttacking": "Leader is attacking"
   },
   "CombatPreviewPanel": {

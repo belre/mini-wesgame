@@ -191,23 +191,12 @@ export default function CutInStage({
   // 戦況要約(2026-07-09): 「今この戦闘で何が起きているか」を配列で受け取る。
   // 描画方法はここで決め切る必要はない(将来のExpo版は同じ配列を別の見せ方で使う想定)。
   // Web版は簡易表示(下のCOMBAT_MOMENT_LABELS)に留め、演出の作り込みは行わない
-  const attackerDef = getUnitDef(current.attacker.unitDefId);
-  const defenderDef = getUnitDef(current.defender.unitDefId);
-  const attackDef = attackerDef.attacks.find((a) => a.id === current.attackerAttackId);
-  const retaliationDef = defenderDef.attacks.find((a) => a.id === current.defenderAttackId);
-  const moments = attackDef
-    ? summarizeCombatMoments({
-        attacker: current.attacker,
-        attackerDef,
-        defender: current.defender,
-        defenderDef,
-        attack: attackDef,
-        retaliationAttack: retaliationDef ?? null,
-        timeOfDay,
-        units: allUnitsForLeadershipCheck,
-        map,
-      })
-    : [];
+  const moments = summarizeCombatMoments({
+    attacker: current.attacker,
+    defender: current.defender,
+    units: allUnitsForLeadershipCheck,
+    map,
+  });
 
   // 地形立体物(森の樹冠・山の岩塊・補給テント・旗)も本盤面と同じ部品と
   // 深度ソートで舞台に立てる(2026-07-08「カットインに地形が反映されてない」)。

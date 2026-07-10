@@ -49,14 +49,16 @@ export const TERRAIN_SPRITES: Record<string, TerrainSpriteDef> = {
   desert: { ground: [T("sand-desert-tile.png")] },
   shallow_water: { ground: [T("shallow-water-tile.png")] },
   deep_water: { ground: [T("deep-water-tile.png")] },
-  // 2026-07-10: village/human.pngも同様に立体物(家屋オブジェクト)。草原の上に建物を置く構図
+  // 2026-07-10: village/human.pngも同様に立体物(家屋オブジェクト)。草原の上に建物を置く構図。
+  // offset.dyで接地位置を下げる(平面2D表示だとdy:0では家の上部がヘックスの外(1つ上の
+  // タイル側)まで突き抜けて見え、どちらのヘックス所属か分かりづらかったため調整)
   village: {
     ground: [WESNOTH_GRASS],
     objects: [
       {
         srcs: [T("village-human.png"), T("village-human2.png"), T("village-human3.png"), T("village-human4.png")],
         occludes: true,
-        offset: { dx: 0, dy: 0 },
+        offset: { dx: 0, dy: 0.4 },
       },
     ],
   },

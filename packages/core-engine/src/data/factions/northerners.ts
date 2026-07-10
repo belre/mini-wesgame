@@ -10,18 +10,24 @@ import {
 } from "./terrainPresets";
 
 // 北方連合(オーク)。フェーズ2以降で解放予定だがデータは先に揃える。
-// 凡愚・鈍重・非力(dim/slow/weak)はゴブリンのみ、勇敢(fearless)はトロル(とグール)のみ。
+// 凡愚・鈍重・非力(dim/slow/weak)はゴブリンのみ。
 export const NORTHERNERS: Faction = {
   id: "northerners",
   name: "Orcs",
   defaultLeaderUnitId: "orcish_warrior",
   assetPackUrl: "/assets/packs/northerners.json",
+  // 宣伝デモ向けに「役割が被らない4種」へ絞り込み(2026-07-10)。
+  // 兵卒(標準戦士)・弓兵(遠隔)・ウルフライダー(高機動)・トロル=troll_whelp(自動回復)
   recruitableUnitIds: [
     "orcish_grunt",
     "orcish_archer",
-    "orcish_spy",
     "wolf_rider",
     "troll_whelp"
+  ],
+  // CPU(人間選択時の敵)は兵卒・弓兵の基本パターンで固定
+  cpuRecruitableUnitIds: [
+    "orcish_grunt",
+    "orcish_archer"
   ],
   availableLeaderUnitIds:[
     "orcish_warrior",
@@ -84,8 +90,8 @@ export const NORTHERNERS: Faction = {
       attacks: [
         { id: "dagger", name: "Dagger", damage: 4, count: 3, type: "blade", range: "melee" },
         { id: "bow", name: "Bow", damage: 8, count: 3, type: "pierce", range: "ranged" },
-        { id: "fire_arrow", name: "Fire Arrow", damage: 10, count: 2, type: "fire", range: "ranged"}
       ],
+      // fire_arrow撤去(2026-07-10): orcish_archer側と同じ理由(fireが刺さる相手がいない)
       resistances: {},
       alignment: "chaotic",
       cost: 26,
@@ -197,8 +203,9 @@ export const NORTHERNERS: Faction = {
       attacks: [
         { id: "dagger", name: "Dagger", damage: 3, count: 2, type: "blade", range: "melee" },
         { id: "bow", name: "Bow", damage: 5, count: 3, type: "pierce", range: "ranged" },
-        { id: "fire_arrow", name: "Fire Arrow", damage: 7, count: 2, type: "fire", range: "ranged"}
       ],
+      // 火矢(fire属性)は2026-07-10撤去: 現行ロスターにfire耐性/弱点を持つ
+      // ユニットが存在せず、pierceと数値上区別が付かない冗長な3本目だったため
       resistances: {},
       alignment: "chaotic",
       cost: 14,

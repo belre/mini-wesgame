@@ -81,6 +81,9 @@ export interface CombatFx {
   ghosts: UnitState[];
   popups: CombatPopup[];
   effects: EffectSprite[]; // 飛び道具・halo等(描画順=配列順)
+  // 撃破された側のフェードアウト係数(unitId → 1=通常 .. 0=消滅)。死亡時刻以降、
+  // 末尾の余韻(TAIL_MS)にかけて1→0へ線形に落ちる。生存中や参照無しは1相当として扱う
+  opacityOverrides: ReadonlyMap<string, number>;
 }
 
 export const EMPTY_COMBAT_FX: CombatFx = {
@@ -91,6 +94,7 @@ export const EMPTY_COMBAT_FX: CombatFx = {
   ghosts: [],
   popups: [],
   effects: [],
+  opacityOverrides: new Map(),
 };
 
 // 注入依存(インターフェース)。盤面ジオメトリとスプライト解決の実装を差し替え可能にする
@@ -129,6 +133,31 @@ export function compileCombatPlayback(
     flipOverrides.set(input.attacker.id, faceLeft(ac, dc, input.attacker.owner === 1));
     flipOverrides.set(input.defender.id, faceLeft(dc, ac, input.defender.owner === 1));
   }
+
+  // 死亡時刻(戦闘開始からの経過ms)。エンジン側はHP0到達で即座に戦闘を打ち切るため、
+  // 実質的には最後の打撃でしか起こらないが、念のため打撃列を素直に走査して求める
+  let attackerDiesAt: number | null = null;
+  let defenderDiesAt: number | null = null;
+  {
+    let aHp = input.attacker.hp;
+    let dHp = input.defender.hp;
+    for (let i = 0; i < input.strikes.length; i++) {
+      const s = input.strikes[i];
+      if (!s.hit) continue;
+      if (s.actor === "attacker") {
+        dHp = s.targetHpAfter;
+        if (dHp <= 0 && defenderDiesAt == null) defenderDiesAt = impactTimeOf(i);
+      } else {
+        aHp = s.targetHpAfter;
+        if (aHp <= 0 && attackerDiesAt == null) attackerDiesAt = impactTimeOf(i);
+      }
+    }
+  }
+  // フェードは末尾の余韻(TAIL_MS)いっぱいを使って1→0に落とす
+  const fadeOf = (diesAt: number | null, t: number): number => {
+    if (diesAt == null || t < diesAt) return 1;
+    return Math.max(0, 1 - (t - diesAt) / TAIL_MS);
+  };
 
   const sceneAt = (t: number): CombatFx => {
     const positions = new Map<string, { cx: number; cy: number }>();
@@ -244,7 +273,7 @@ export function compileCombatPlayback(
           cx: c.cx,
           cy: c.cy,
           dy: 32 + p * 22,
-          text: s.hit ? `-${s.damage}` : "回避",
+          text: s.hit ? `-${s.damage}` : "Miss",
           color: s.hit ? "#ff6b6b" : "#9aa4b0",
           alpha: 1 - p,
         });
@@ -266,6 +295,10 @@ export function compileCombatPlayback(
       }
     });
 
+    const opacityOverrides = new Map<string, number>();
+    opacityOverrides.set(input.attacker.id, fadeOf(attackerDiesAt, t));
+    opacityOverrides.set(input.defender.id, fadeOf(defenderDiesAt, t));
+
     return {
       positions,
       spriteOverrides,
@@ -274,6 +307,7 @@ export function compileCombatPlayback(
       ghosts: input.ghosts,
       popups,
       effects,
+      opacityOverrides,
     };
   };
 

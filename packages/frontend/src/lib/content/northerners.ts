@@ -84,24 +84,6 @@ export const SPRITES: Record<string, UnitSpriteDef> = {
         ],
         missile: { startTime: -150, duration: 150, image: `${ASSET_BASE}/sprites/projectiles/missile-n.png` },
       },
-      // fire_arrow: 同じ弓フレームで火矢(missile-fire-n)。本家はmissile_offset=0~0.8:150
-      fire_arrow: {
-        startTime: -445,
-        frames: [
-          { image: `${ASSET_BASE}/sprites/orcish_archer/archer-bow.png`, duration: 65 },
-          { image: `${ASSET_BASE}/sprites/orcish_archer/archer-bow-attack-1.png`, duration: 75 },
-          { image: `${ASSET_BASE}/sprites/orcish_archer/archer-bow-attack-2.png`, duration: 75 },
-          { image: `${ASSET_BASE}/sprites/orcish_archer/archer-bow-attack-3.png`, duration: 100 },
-          { image: `${ASSET_BASE}/sprites/orcish_archer/archer-bow-attack-4.png`, duration: 130 },
-          { image: `${ASSET_BASE}/sprites/orcish_archer/archer-bow-attack-1.png`, duration: 65 },
-        ],
-        missile: {
-          startTime: -150,
-          duration: 150,
-          image: `${ASSET_BASE}/sprites/projectiles/missile-fire-n.png`,
-          offset: [{ from: 0, to: 0.8, duration: 150 }],
-        },
-      },
     },
     defend: { reaction: `${ASSET_BASE}/sprites/orcish_archer/archer-bow-defend.png` },
   },
@@ -132,20 +114,6 @@ export const SPRITES: Record<string, UnitSpriteDef> = {
           { image: `${ASSET_BASE}/sprites/orcish_crossbow/xbowman.png`, duration: 50 },
         ],
         missile: { startTime: -150, duration: 150, image: `${ASSET_BASE}/sprites/projectiles/missile-n.png` },
-      },
-      // fire_arrow: 火矢バリアント(missile-fire-n、本家はoffset=0~0.8)
-      fire_arrow: {
-        startTime: -300,
-        frames: [
-          { image: `${ASSET_BASE}/sprites/orcish_crossbow/xbowman-ranged-1.png`, duration: 200 },
-          { image: `${ASSET_BASE}/sprites/orcish_crossbow/xbowman-ranged-2.png`, duration: 100 },
-        ],
-        missile: {
-          startTime: -150,
-          duration: 150,
-          image: `${ASSET_BASE}/sprites/projectiles/missile-fire-n.png`,
-          offset: [{ from: 0, to: 0.8, duration: 150 }],
-        },
       },
     },
     defend: { reaction: `${ASSET_BASE}/sprites/orcish_crossbow/xbowman-melee-defend-1.png` },

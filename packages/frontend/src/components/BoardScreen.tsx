@@ -5,9 +5,22 @@
 // アクションの確定は注入された submit(リモート: API / CPU練習: applyActionを直接実行)に委譲する。
 // - 確定済みの盤面: props.board(呼び出し元がAPIキャッシュ or useStateで管理)
 // - 下書き状態: useState(計画書3.3)
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { useTranslations } from "next-intl";
-import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch";
+import {
+  TransformComponent,
+  TransformWrapper,
+  type ReactZoomPanPinchRef,
+} from "react-zoom-pan-pinch";
 import {
   ABILITY_NAMES,
   canMoveTo,
@@ -15,7 +28,6 @@ import {
   computeReachable,
   computeVisionSet,
   displayDamage,
-  effectiveTraits,
   getFaction,
   getUnitDef,
   hasLeadershipSupport,
@@ -29,8 +41,8 @@ import {
   reconstructPath,
   SPECIAL_NAMES,
   terrainAt,
+  TIME_OF_DAY_DEFS,
   timeOfDayForTurn,
-  TRAIT_NAMES,
   type Action,
   type GameEvent,
   type HexCoord,
@@ -43,16 +55,28 @@ import { useMatchAssets } from "@/hooks/useMatchAssets";
 import { useMoveAnimations } from "@/hooks/useMoveAnimations";
 import CombatPreviewPanel from "./CombatPreviewPanel";
 import HexGrid from "./HexGrid";
-import { backNeighborOf } from "@/lib/board/geometry";
+import { backNeighborOf, hexCenter, hexElementId } from "@/lib/board/geometry";
+import { OWNER_COLORS } from "@/lib/board/colors";
 import { LoadingScreen } from "./LoadingScreen";
 import RecruitSheet from "./RecruitSheet";
+import RulesPanel from "./RulesPanel";
 
 // 時間帯の見た目(2026-07-07 夜演出の本採用。/dev/terrainの昼夕夜プリセットで
 // 検証済みの式)。skybox = terrain-diorama/skybox-<variant>.jpg(dayからgrade派生)、
 // filter+overlay(multiply)は盤面ごと空気の色を作る。未定義の時間帯=昼
 
-// 下書き(まだ送信していない自分だけのローカルな選択状態)
-type UiMode =
+// ユニット詳細パネルの陣営表示(2026-07-10): lawful=昼+25%/夜-25%、chaotic=逆、
+// neutral=無補正。アイコンで「どちらの時間帯有利か」を一目で示す
+const ALIGNMENT_LABEL: Record<string, string> = {
+  lawful: "☀ Lawful",
+  neutral: "Neutral",
+  chaotic: "🌙 Chaotic",
+};
+
+// 下書き(まだ送信していない自分だけのローカルな選択状態)。
+// 1ターン目クリックガイド(FirstTurnGuide)が現在の操作段階を判定するために
+// 外部公開する(onModeChange経由)
+export type UiMode =
   | { kind: "idle" }
   | { kind: "unitSelected"; unitId: string }
   | { kind: "moveDraft"; unitId: string; target: HexCoord }
@@ -68,38 +92,55 @@ const EMPTY_SET: ReadonlySet<string> = new Set();
 // 暫定値(タッチ誤差程度を想定。要調整)
 const SAME_TAP_RADIUS_PX = 16;
 
+// TransformComponentのcontentStyle paddingと同じ値(centerOnHexの座標計算が使う)
+const CONTENT_PADDING = 24;
+
 // SSR時はuseLayoutEffectがno-op警告を出すためuseEffectにフォールバックする
 // (このコンポーネントはクライアント専用だが、初回HTMLはServer Componentの
 // ページから直接レンダーされるため、SSR中に一度だけ通る)
 const useIsoLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
-export default function BoardScreen({
-  board,
-  myIndex,
-  submit: submitImpl,
-  banner,
-  overlay,
-  guideHexes,
-  extraEvents,
-  onCombatPlayback,
-  children,
-}: {
-  board: MatchState; // 閲覧者視点でフィルタ済みの盤面
-  myIndex: number;
-  submit: (action: Action) => Promise<GameEvent[]>; // 成功時はイベント列、失敗時はthrow
-  banner?: ReactNode; // topbar直下に出す通知(CPU練習モードの案内など)
-  overlay?: ReactNode; // 盤面の上に重ねる要素(チュートリアルのガイドカードなど)
-  guideHexes?: ReadonlySet<string>; // ガイド用にハイライトするヘックス(hexKey)
-  // 自分の操作以外で発生したイベント(CPUの手など)。movedの実経路アニメに使う
-  extraEvents?: { seq: number; events: GameEvent[] } | null;
-  // 戦闘再生入力の注入口(producer/consumer分離)。未指定なら従来どおり盤面内アニメで
-  // 再生し、指定時は外部レンダラー(カットイン等)へ流して盤面内では再生しない。
-  // 入力の組み立て(戦闘前スナップショット・ゴースト・ちらつき対策)はBoardScreenが
-  // 唯一のproducerとして担い、消費側だけを差し替えられる
-  onCombatPlayback?: (input: CombatPlaybackInput) => void;
-  // board-wrap内(盤面の上・Loading画面の下)に重ねる要素。カットイン(CutInStage)の差し込み口
-  children?: ReactNode;
-}) {
+// 1ターン目クリックガイド(FirstTurnGuide)がカメラを対象ヘックスへ寄せるための
+// 命令的ハンドル。zoomToElementはhexElementIdのDOM idを直接探すため、
+// マップサイズが変わっても座標計算をやり直す必要がない
+export interface BoardScreenHandle {
+  centerOnHex: (coord: HexCoord) => void;
+}
+
+function BoardScreen(
+  {
+    board,
+    myIndex,
+    submit: submitImpl,
+    banner,
+    overlay,
+    guideHexes,
+    extraEvents,
+    onCombatPlayback,
+    onModeChange,
+    children,
+  }: {
+    board: MatchState; // 閲覧者視点でフィルタ済みの盤面
+    myIndex: number;
+    submit: (action: Action) => Promise<GameEvent[]>; // 成功時はイベント列、失敗時はthrow
+    banner?: ReactNode; // topbar直下に出す通知(CPU練習モードの案内など)
+    overlay?: ReactNode; // 盤面の上に重ねる要素(チュートリアルのガイドカードなど)
+    guideHexes?: ReadonlySet<string>; // ガイド用にハイライトするヘックス(hexKey)
+    // 自分の操作以外で発生したイベント(CPUの手など)。movedの実経路アニメに使う
+    extraEvents?: { seq: number; events: GameEvent[] } | null;
+    // 戦闘再生入力の注入口(producer/consumer分離)。未指定なら従来どおり盤面内アニメで
+    // 再生し、指定時は外部レンダラー(カットイン等)へ流して盤面内では再生しない。
+    // 入力の組み立て(戦闘前スナップショット・ゴースト・ちらつき対策)はBoardScreenが
+    // 唯一のproducerとして担い、消費側だけを差し替えられる
+    onCombatPlayback?: (input: CombatPlaybackInput) => void;
+    // 内部の下書き状態(UiMode)が変わるたびに通知する。FirstTurnGuideのような
+    // 「操作段階を外から観測して誘導したい」呼び出し元向け(2026-07-10)
+    onModeChange?: (mode: UiMode) => void;
+    // board-wrap内(盤面の上・Loading画面の下)に重ねる要素。カットイン(CutInStage)の差し込み口
+    children?: ReactNode;
+  },
+  ref: React.Ref<BoardScreenHandle>,
+) {
   const t = useTranslations("Board");
   // 時間帯の表示名(id→翻訳キーの対応。timeOfDayForTurnのid一覧と揃える)
   const TOD_LABEL: Record<string, string> = {
@@ -111,7 +152,32 @@ export default function BoardScreen({
     second_watch: t("todLateNight"),
   };
   const [mode, setMode] = useState<UiMode>({ kind: "idle" });
+  useEffect(() => {
+    onModeChange?.(mode);
+    // onModeChangeは呼び出し側でuseCallback化されていない前提が多いため依存に含めない
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode]);
+  const pzRef = useRef<ReactZoomPanPinchRef | null>(null);
+  useImperativeHandle(ref, () => ({
+    // zoomToElementは要素サイズにフィットするズームまでかけてしまい(地形立体物で
+    // 実バウンディングボックスが膨らむユニットもあるため)挙動が安定しなかった。
+    // 代わりに現在のズーム倍率のまま「対象ヘックスを画面中央へ平行移動するだけ」の
+    // 計算をhexCenter(盤面座標系)から直接行う(TransformComponentのcontentStyle
+    // paddingぶんのオフセットだけ補正すればよい。CONTENT_PADDINGと同じ値を使う)
+    centerOnHex: (coord) => {
+      const ctx = pzRef.current;
+      const wrapper = ctx?.instance.wrapperComponent;
+      if (!ctx || !wrapper) return;
+      const { cx, cy } = hexCenter(coord);
+      const scale = ctx.instance.transformState.scale;
+      const rect = wrapper.getBoundingClientRect();
+      const positionX = rect.width / 2 - (cx + CONTENT_PADDING) * scale;
+      const positionY = rect.height / 2 - (cy + CONTENT_PADDING) * scale;
+      ctx.setTransform(positionX, positionY, scale, 400);
+    },
+  }), []);
   const [fabOpen, setFabOpen] = useState(false);
+  const [rulesOpen, setRulesOpen] = useState(false);
   const [endTurnConfirm, setEndTurnConfirm] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -650,11 +716,6 @@ export default function BoardScreen({
             {t("opponentTurn", { name: board.players[board.activePlayer].userId })}
           </span>
         )}
-        <span className="dim" style={{ marginLeft: "auto", fontSize: 12 }}>
-          {board.players
-            .map((p) => `${p.userId}[${getFaction(p.factionId).name}]`)
-            .join(" vs ")}
-        </span>
       </div>
 
       {banner}
@@ -662,6 +723,7 @@ export default function BoardScreen({
       <div className="board-wrap">
         {/* パン&ズーム(1本指パン・2本指ピンチ・ホイール)のラップ範囲はSVGのみ(計画書3.4) */}
         <TransformWrapper
+          ref={pzRef}
           minScale={0.4}
           maxScale={3}
           limitToBounds={false}
@@ -670,7 +732,7 @@ export default function BoardScreen({
         >
           <TransformComponent
             wrapperStyle={{ width: "100%", height: "100%" }}
-            contentStyle={{ padding: 24 }}
+            contentStyle={{ padding: CONTENT_PADDING }}
           >
             <HexGrid
               map={map}
@@ -731,7 +793,9 @@ export default function BoardScreen({
         {/* アセット取得が済むまで盤面を覆う(盤面は裏でマウント済み=キャッシュ共有) */}
         <LoadingScreen assets={matchAssets} />
 
-        {overlay}
+        {/* overlayはLoading完了後にだけ出す(FirstTurnGuideのスポットライトが
+            Loading画面の黒背景の上に浮いて見える問題があった。2026-07-10) */}
+        {matchAssets.status === "ready" && overlay}
 
         {toast && <div className="toast">{toast}</div>}
 
@@ -748,6 +812,27 @@ export default function BoardScreen({
             </button>
             <button onClick={() => setEndTurnConfirm(false)}>{t("cancel")}</button>
           </div>
+        )}
+
+        {/* ルール早見(常設): 試合中いつでも押せる。宣伝デモとして「詳しくは知らなくても
+            遊べる」を保ちつつ、気になった人だけ見返せる導線(2026-07-10) */}
+        <button className="help-fab" onClick={() => setRulesOpen((v) => !v)}>
+          ?
+        </button>
+
+        {/* パネル表示中は盤面・下書きUI(雇用・移動・攻撃プレビュー等)を封じる。
+            誤操作防止(2026-07-10)。クリックでも閉じられる(モーダルの定石)。
+            RulesPanel自体は.overlay-bottom(position:absolute+z-index10で
+            独自のスタッキングコンテキストを作る)の"外"、scrimと同じ階層の
+            兄弟として描画しないと、子要素にz-indexを盛ってもscrimの下に
+            埋もれてしまう(実際に踏んだ不具合) */}
+        {rulesOpen && (
+          <>
+            <div className="rules-scrim" onClick={() => setRulesOpen(false)} />
+            <div className="rules-panel-wrap">
+              <RulesPanel onClose={() => setRulesOpen(false)} />
+            </div>
+          </>
         )}
 
         {/* 汎用アクションメニュー(FAB): 開く→選ぶの2タップ構造が誤操作防止(計画書3.4) */}
@@ -916,6 +1001,8 @@ export default function BoardScreen({
   );
 }
 
+export default forwardRef(BoardScreen);
+
 function UnitInfoPanel({
   unit,
   isMine,
@@ -935,8 +1022,6 @@ function UnitInfoPanel({
 }) {
   const t = useTranslations("UnitInfoPanel");
   const def = getUnitDef(unit.unitDefId);
-  // 実効特性: レベル0の暗黙特性「小物(no_zoc)」込みで表示する
-  const traits = effectiveTraits(def, unit.traits);
   const abilities = def.abilities ?? [];
   const leadership = hasLeadershipSupport(unit, units);
   return (
@@ -946,16 +1031,28 @@ function UnitInfoPanel({
           {unit.isLeader ? "★ " : ""}
           {def.name}
           <span className="dim" style={{ marginLeft: 6, fontSize: 12 }}>
-            {isMine ? t("mine") : t("enemy")} Lv{def.level}
+            {/* 自軍/敵軍は文字でなく所属色のドットで示す(2026-07-10。盤面の
+                足元カラーと同じOWNER_COLORSを流用し、見た瞬間に分かるように) */}
+            <span
+              aria-label={isMine ? "Your unit" : "Enemy unit"}
+              title={isMine ? "Your unit" : "Enemy unit"}
+              style={{
+                display: "inline-block",
+                width: 8,
+                height: 8,
+                borderRadius: "50%",
+                background: OWNER_COLORS[unit.owner],
+                marginRight: 5,
+              }}
+            />
+            Lv{def.level}
+          </span>
+          <span className="dim" style={{ marginLeft: 6, fontSize: 12 }}>
+            {ALIGNMENT_LABEL[def.alignment] ?? def.alignment}
           </span>
           {abilities.length > 0 && (
             <span style={{ color: "#7ec8e3", marginLeft: 6, fontSize: 12 }}>
               {abilities.map((a) => ABILITY_NAMES[a]).join("・")}
-            </span>
-          )}
-          {traits.length > 0 && (
-            <span style={{ color: "var(--gold)", marginLeft: 6, fontSize: 12 }}>
-              {traits.map((tr) => TRAIT_NAMES[tr]).join("・")}
             </span>
           )}
           {unit.poisoned && (
@@ -967,7 +1064,7 @@ function UnitInfoPanel({
         </strong>
         <div className="row">
           {canRecruit && (
-            <button className="primary" onClick={onRecruit}>
+            <button id="board-recruit-button" className="primary" onClick={onRecruit}>
               {t("recruitButton")}
             </button>
           )}
@@ -978,11 +1075,6 @@ function UnitInfoPanel({
         HP {unit.hp}/{unit.maxHp ?? def.hp} ・{" "}
         <span style={{ color: "#b07fe0" }}>
           XP {unit.xp ?? 0}/{maxXpFor(def, unit.traits ?? [])}
-          {def.advancesTo?.length
-            ? t("nextLevel", {
-                names: def.advancesTo.map((id) => getUnitDef(id).name).join(" / "),
-              })
-            : t("nextLevelDefault")}
         </span>
         {" "}・ {t("moveLabel")} {unit.movesLeft}/{unit.maxMoves ?? def.movement.points}
         {def.movement.type === "fly"
@@ -990,22 +1082,41 @@ function UnitInfoPanel({
           : def.movement.type === "swim"
             ? t("swimming")
             : ""}
-        ・
-        {" "}
-        {def.attacks
-          .map(
-            (a) =>
-              `${a.name} ${displayDamage(a, def, timeOfDay, {
-                attackerTraits: unit.traits,
-                leadership,
-                slowed: unit.slowed,
-              })}×${a.count}(${a.range === "melee" ? t("melee") : t("ranged")}${
-                a.specials?.length
-                  ? `・${a.specials.map((s) => SPECIAL_NAMES[s]).join("・")}`
-                  : ""
-              })`,
-          )
-          .join(" / ")}
+      </div>
+      <div className="dim" style={{ marginTop: 4, fontSize: 12 }}>
+        {def.attacks.map((a, i) => {
+          const effective = displayDamage(a, def, timeOfDay, {
+            attackerTraits: unit.traits,
+            leadership,
+            slowed: unit.slowed,
+          });
+          // 基準値: このユニット固有の特性(強力等)は含めたまま、状況要因
+          // (時間帯・統率・遅化)だけを外した値。2026-07-10: 素朴にattack.damage
+          // (陣営データの生値)と比べると「強力」等の個体差まで「今だけ上がっている」
+          // ように見えてしまうバグがあった(dawn=無補正のはずなのに矢印が出た実例)。
+          // TIME_OF_DAY_DEFS.dawnはalignmentModifier:{}=無補正なので基準として使える
+          const baseline = displayDamage(a, def, TIME_OF_DAY_DEFS.dawn, {
+            attackerTraits: unit.traits,
+          });
+          const diff = effective - baseline;
+          const boostColor = diff > 0 ? "#8ee08e" : diff < 0 ? "#e08a8a" : undefined;
+          return (
+            <span key={a.id}>
+              {i > 0 && " / "}
+              {a.name}{" "}
+              <span style={boostColor ? { color: boostColor, fontWeight: 700 } : undefined}>
+                {effective}
+                {diff > 0 ? "▲" : diff < 0 ? "▼" : ""}
+              </span>
+              ×{a.count}(
+              {a.range === "melee" ? t("melee") : t("ranged")}
+              {a.specials?.length
+                ? `・${a.specials.map((s) => SPECIAL_NAMES[s]).join("・")}`
+                : ""}
+              )
+            </span>
+          );
+        })}
       </div>
     </div>
   );

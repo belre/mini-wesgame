@@ -28,7 +28,7 @@ import {
   type TerrainObjectDef,
 } from "@/lib/sprites";
 import type { CombatFx } from "@/hooks/useCombatAnimations";
-import { S, boardPixelSize, hexCenter, hexPointsAt } from "@/lib/board/geometry";
+import { S, boardPixelSize, hexCenter, hexElementId, hexPointsAt } from "@/lib/board/geometry";
 import { OWNER_COLORS, OWNER_COLORS_LIGHT, hpColor } from "@/lib/board/colors";
 import {
   buildTerrainObjectItems,
@@ -193,6 +193,7 @@ export default function HexGrid({
         return (
           <g
             key={key}
+            id={hexElementId(c)}
             data-hex-x={c.x}
             data-hex-y={c.y}
             onClick={(e) => onHexClick(c, { x: e.clientX, y: e.clientY })}
@@ -208,29 +209,17 @@ export default function HexGrid({
               groundOverride={devTerrainGround?.[terrainId]}
             />
             {/* 補給拠点の領有: 所有者の色で縁取り(平面=作戦図モードの補助。
-                主表示は陣営色の小旗ビルボード)。地形の記号マーク(♣⌂▲🚩)は
-                2026-07-08 廃止 — 樹冠・テント・岩塊・旗の実体が立った時点で二重表示 */}
+                旗の実体はビルボードレイヤー側(家屋オブジェクトの上に描く。
+                2026-07-10: ここに⌂マークを置いていたが、村が立体物(家屋billboard)
+                化されて以降は家屋の絵に隠れて見えなくなっていたため移設した) */}
             {villageOwner !== undefined && (
-              <>
-                <polygon
-                  points={hexPointsAt({ cx, cy })}
-                  fill="none"
-                  stroke={OWNER_COLORS_LIGHT[villageOwner]}
-                  strokeWidth={3}
-                  pointerEvents="none"
-                />
-                {/* mini-wesgame: 占領旗アセットが無いため⌂マークで領有を示す */}
-                <text
-                  x={cx}
-                  y={cy + 6}
-                  textAnchor="middle"
-                  fontSize={16}
-                  fill={OWNER_COLORS_LIGHT[villageOwner]}
-                  pointerEvents="none"
-                >
-                  ⌂
-                </text>
-              </>
+              <polygon
+                points={hexPointsAt({ cx, cy })}
+                fill="none"
+                stroke={OWNER_COLORS_LIGHT[villageOwner]}
+                strokeWidth={3}
+                pointerEvents="none"
+              />
             )}
             {moveTargets.has(key) && (
               <polygon
@@ -401,7 +390,7 @@ export default function HexGrid({
               onClick={(e) => onHexClick(u.pos, { x: e.clientX, y: e.clientY })}
               style={{ cursor: "pointer" }}
               pointerEvents="visiblePainted"
-              opacity={acted ? 0.55 : 1}
+              opacity={(acted ? 0.55 : 1) * (combatFx?.opacityOverrides.get(u.id) ?? 1)}
             >
               <UnitBody
                 cx={0}
@@ -543,6 +532,32 @@ export default function HexGrid({
               style={{ imageRendering: "pixelated" }}
               pointerEvents="none"
             />
+          );
+        })}
+
+        {/* 補給拠点(村)の占領旗(2026-07-10)。地形レイヤーの縁取りだけだと
+            家屋オブジェクト(occludes:true)に隠れて見えなくなっていたため、
+            ビルボードレイヤーの最後(=常に最前面)に小旗として描き直す。
+            中央上部だと占領直後(村にユニットが乗っている状態)に頭へ突き刺さって
+            見えるため、ヘックス右端に寄せてユニット本体を避ける */}
+        {cells.map((c) => {
+          if (TERRAIN_BY_CHAR[map.tiles[c.y][c.x]] !== "village") return null;
+          const owner = villageOwners[hexKey(c)];
+          if (owner === undefined) return null;
+          const { cx, cy } = viewCenter(c);
+          const flagX = cx + S * 0.72;
+          const poleTop = cy - S * 0.55;
+          const poleBottom = cy + S * 0.15;
+          return (
+            <g key={`flag-${hexKey(c)}`} pointerEvents="none">
+              <line x1={flagX} y1={poleBottom} x2={flagX} y2={poleTop} stroke="#3a3226" strokeWidth={2} />
+              <polygon
+                points={`${flagX},${poleTop} ${flagX + S * 0.42},${poleTop + S * 0.14} ${flagX},${poleTop + S * 0.28}`}
+                fill={OWNER_COLORS_LIGHT[owner]}
+                stroke="#10141a"
+                strokeWidth={1}
+              />
+            </g>
           );
         })}
       </svg>

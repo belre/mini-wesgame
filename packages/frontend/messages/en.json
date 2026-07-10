@@ -157,18 +157,12 @@
   "RecruitSheet": {
     "heading": "Choose a unit to recruit",
     "goldLabel": "(Gold {gold})",
-    "closeButton": "Close",
-    "statLine": "HP{hp} / Move {move}",
-    "flying": "(flying)"
+    "closeButton": "Close"
   },
   "UnitInfoPanel": {
-    "mine": "Mine",
-    "enemy": "Enemy",
     "recruitButton": "Recruit",
     "closeButton": "Close",
     "moveLabel": "Move",
-    "nextLevel": "(next: {names})",
-    "nextLevelDefault": "(next: max HP +3)",
     "flying": "(flying)",
     "swimming": "(swimming)",
     "melee": "melee",

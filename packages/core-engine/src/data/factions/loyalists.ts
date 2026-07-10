@@ -13,14 +13,18 @@ export const LOYALISTS: Faction = {
   name: "Humans",
   defaultLeaderUnitId: "lieutenant",
   assetPackUrl: "/assets/packs/loyalists.json",
+  // 宣伝デモ向けに「役割が被らない4種」へ絞り込み(2026-07-10)。
+  // 槍兵(先制)・弓兵(遠隔)・竜騎兵=cavalryman(高機動)・魔術師(魔法+命中安定)
   recruitableUnitIds: [
     "spearman",
     "bowman",
-    "heavy_infantryman",
     "cavalryman",
-    "horseman",
-    "mage",
-    "fencer"
+    "mage"
+  ],
+  // CPU(オーク選択時の敵)は槍兵・弓兵の基本パターンで固定
+  cpuRecruitableUnitIds: [
+    "spearman",
+    "bowman"
   ],
   availableLeaderUnitIds: [
     "lieutenant",

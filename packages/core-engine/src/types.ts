@@ -119,7 +119,11 @@ export interface Faction {
   name: string;
   defaultLeaderUnitId: string; // マッチ開始時にkeepへ配置されるデフォルトのリーダーユニット
   availableLeaderUnitIds: string[]    // リーダーユニットで可能なユニットの一覧
-  recruitableUnitIds: string[]   // 雇用可能なユニットの一覧
+  recruitableUnitIds: string[]   // 雇用可能なユニットの一覧(人間プレイヤー向け)
+  // CPU操作時の雇用候補(未指定はrecruitableUnitIdsをそのまま使う)。
+  // 宣伝デモとして「プレイヤーが選んだ側だけ選択肢を広く見せ、相手側(CPU)は
+  // 常に同じ基本パターンで安定させる」ための絞り込み(2026-07-10)
+  cpuRecruitableUnitIds?: string[]
   units: UnitDef[];
   assetPackUrl: string; // モバイル向け遅延ダウンロード先(スプライト一式)
   // 疫病(plague)でこの陣営のユニットが倒されたときに変化する死体のunitDefId。

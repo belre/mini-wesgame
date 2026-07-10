@@ -475,8 +475,7 @@ export const ASSET_GROUPS = [
     files: [
       "spear-n.png",        // spearman javelin
       "missile-n.png",      // bowman/longbowman/lieutenant/dragoon/duelist crossbow
-      // オークの火矢・投げナイフ・投げ網
-      "missile-fire-n.png",
+      // オークの投げナイフ・投げ網
       "dagger-n.png",
       "web.png",
     ],

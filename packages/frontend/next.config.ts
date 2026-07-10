@@ -13,9 +13,15 @@ const nextConfig: NextConfig = {
   outputFileTracingRoot: path.join(process.cwd(), "../.."),
   // 静的書き出し(2026-07-10): アプリはCPU戦+チュートリアルのみでバックエンド不要
   // (ロビー・API Routesは撤去済み)なので、Vercel/itch.io共通で完全に静的なHTMLへ
-  // 書き出せる。`out/`一式をVercelにデプロイしてもitch.ioにzipでアップロードしても
-  // 同じ成果物で済む(i18n/request.tsのcookies()撤去とセットで初めて成立する)
+  // 書き出せる(i18n/request.tsのcookies()撤去とセットで初めて成立する)。
   output: "export",
+  // itch.ioはzipの中身をドメイン直下ではなく不定のサブパス(アップロードのたびに変わる
+  // CDN上のハッシュ付きパス)に展開して配信するため、Next既定の絶対パス(/_next/...)は
+  // 404になる(Vercelはドメイン直下なので絶対パスのままで問題ない)。
+  // ITCH_BUILD=1のときだけ相対パス化する。ただし単一のassetPrefixだけでは
+  // ネストしたページ(dev/*・tutorial/*)の深さに対応できないため、
+  // scripts/prepare-itch-build.mjsで各HTMLに<base href>を深さぶん注入して補う
+  ...(process.env.ITCH_BUILD ? { assetPrefix: "./" } : {}),
   // 盤面左下のバージョン表示(2026-07-10)向け。VERCEL_GIT_COMMIT_SHAはVercelの
   // デプロイで自動注入される(ローカルdevでは未設定→表示側でフォールバック)
   env: {

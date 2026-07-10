@@ -553,6 +553,10 @@ select {
   width: 100%;
   text-align: left;
   margin-bottom: 6px;
+  /* スマホでのタップしやすさ(2026-07-10 実機フィードバック): 基準buttonの
+     padding: 8px 14pxだけだと高さが足りない。min-heightで底上げする */
+  min-height: 48px;
+  padding: 12px 14px;
 }
 
 .dim {

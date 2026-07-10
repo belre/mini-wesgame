@@ -63,23 +63,19 @@ export function keepOwnerIndex(map: GameMap, c: HexCoord): number | undefined {
   return undefined;
 }
 
-// 立体物の不透明度。2条件は独立(2026-07-08 実地で確定した優先順):
-// 1. revealBehind: 真後ろのヘックスが行動対象(移動先等)の間は狙い所を見せる。
-//    fadeMode: never の岩にも掛かる(操作性>景観)
-// 2. 可読性フェード: 占有ユニットを隠す立体物(occludes)を fadeMode に従って薄く。
-//    always=常時 / never=しない
-// フェード値は2系統で別(2026-07-08 分離):
-// - reveal(0.35): 操作性の救済。奥のハイライトと地面を「見せる」のが目的なので強めに抜く
-// - occupied(0.5): 可読性フェード。ユニットの視認と「森に隠れている」空気の両立なので
-//   抜きすぎない(0.35は森が消えすぎ — 実地評価)
-const FADE_REVEAL = 0.35;
+// 立体物の不透明度。可読性フェード: 占有ユニットを隠す立体物(occludes)を
+// fadeModeに従って薄く(always=常時 / never=しない)。抜きすぎない値(0.5)にして
+// ユニットの視認と「森に隠れている」空気を両立する(2026-07-08 実地評価)。
+// かつて存在した「操作性の救済」フェード(選択中に奥のハイライトを見せるため
+// 岩・山を0.35まで薄くする機能)は本家Wesnothに準拠する形で撤去した
+// (2026-07-10。クリック自体は立体物がpointerEvents:noneのため元々素通しで、
+// 選択のたびに山が消えたように見える方が実害が大きいとユーザー判断)
 const FADE_OCCUPIED = 0.5;
 
 export function objectOpacity(
   obj: Pick<TerrainObjectDef, "occludes" | "fadeMode">,
-  opts: { hexOccupied: boolean; revealBehind?: boolean },
+  opts: { hexOccupied: boolean },
 ): number {
-  if (opts.revealBehind) return FADE_REVEAL;
   const mode = obj.fadeMode ?? "always";
   if (obj.occludes && opts.hexOccupied && mode === "always") {
     return FADE_OCCUPIED;
@@ -97,7 +93,6 @@ export interface TerrainObjectItem {
   c: HexCoord;
   pp: { cx: number; cy: number; scale: number };
   y: number;
-  revealBehind: boolean;
   ownerIndex?: number;
 }
 
@@ -122,15 +117,12 @@ export function buildTerrainObjectItems(opts: {
   viewCenter: (c: HexCoord) => { cx: number; cy: number };
   // 立体物定義の解決(devプレビューの上書き→コンテンツパックの順は呼び出し側が握る)
   getObjects: (c: HexCoord, terrainId: string) => readonly TerrainObjectDef[] | undefined;
-  // 操作性の救済(HexGridのみ): 真後ろのヘックスが行動対象なら薄くする
-  revealBehind?: (c: HexCoord) => boolean;
 }): TerrainObjectItem[] {
   return opts.cells.flatMap((c) => {
     const terrainId = TERRAIN_BY_CHAR[opts.map.tiles[c.y][c.x]];
     const objects = opts.getObjects(c, terrainId);
     if (!objects?.length) return [];
     const key = hexKey(c);
-    const reveal = opts.revealBehind?.(c) ?? false;
     // 陣営色バリアント(旗)用の帰属解決。ownerVariantを使うエントリがある地形のみ計算
     const ownerIndex = objects.some((o) => o.ownerVariant)
       ? keepOwnerIndex(opts.map, c)
@@ -154,7 +146,6 @@ export function buildTerrainObjectItems(opts: {
         c,
         pp,
         y: pp.cy,
-        revealBehind: reveal,
         ownerIndex,
       };
     });
@@ -200,18 +191,4 @@ export function clusterPullVec(
   const len = Math.hypot(dx, dy);
   if (len < 1) return { dx: 0, dy: 0 };
   return { dx: (dx / len) * pull * S, dy: (dy / len) * pull * S };
-}
-
-// 「真後ろ」判定のヘルパー: ビュー空間で自分より上(=画面奥)にある隣接ヘックスに
-// actionable(移動先・攻撃対象・雇用先)があるか
-export function hasActionableBehind(
-  map: GameMap,
-  c: HexCoord,
-  viewCenter: (c: HexCoord) => { cx: number; cy: number },
-  actionable: (key: string) => boolean,
-): boolean {
-  const cCy = viewCenter(c).cy;
-  return hexNeighbors(c).some(
-    (n) => inBounds(map, n) && viewCenter(n).cy < cCy - S * 0.5 && actionable(hexKey(n)),
-  );
 }

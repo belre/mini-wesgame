@@ -2,7 +2,7 @@
 
 // 地形立体物のビルボード(ジオラマPhase B)。木・岩・家屋等をユニットと同じ
 // 深度ソートに参加させて描く。バリアントはヘックス座標から決定的に選択。
-// 不透明度の規則(可読性フェード・revealBehind)は lib/board/objects.ts の
+// 不透明度の規則(可読性フェード)は lib/board/objects.ts の
 // objectOpacity() が正(単体テストあり)。
 // HexGrid肥大化の分割(2026-07-08リファクタ)で components/HexGrid.tsx から移設
 import { imageNaturalSize, useImagesReady, type TerrainObjectDef } from "@/lib/sprites";
@@ -20,7 +20,6 @@ export function TerrainObjectBillboard({
   hexX,
   hexY,
   hexOccupied,
-  revealBehind,
   ownerIndex,
 }: {
   obj: TerrainObjectDef;
@@ -28,9 +27,6 @@ export function TerrainObjectBillboard({
   hexX: number;
   hexY: number;
   hexOccupied: boolean;
-  // 真後ろのヘックスが行動対象(移動先等)の間、立体物を薄くして狙い所を見せる。
-  // fadeModeとは独立の操作性向け条件(fadeMode: neverの岩にも掛かる)
-  revealBehind?: boolean;
   // ownerVariant用: このヘックスの帰属プレイヤー(keepの走査順割当)。呼び出し側が解決する
   ownerIndex?: number;
 }) {
@@ -54,7 +50,7 @@ export function TerrainObjectBillboard({
       width={sz.w}
       height={sz.h}
       transform={flip ? "scale(-1 1)" : undefined}
-      opacity={objectOpacity(obj, { hexOccupied, revealBehind })}
+      opacity={objectOpacity(obj, { hexOccupied })}
       style={{ imageRendering: "pixelated" }}
       pointerEvents="none"
     />

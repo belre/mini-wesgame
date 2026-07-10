@@ -30,11 +30,7 @@ import {
 import type { CombatFx } from "@/hooks/useCombatAnimations";
 import { S, boardPixelSize, hexCenter, hexElementId, hexPointsAt } from "@/lib/board/geometry";
 import { OWNER_COLORS, OWNER_COLORS_LIGHT, hpColor } from "@/lib/board/colors";
-import {
-  buildTerrainObjectItems,
-  hasActionableBehind,
-  pickTerrainObjects,
-} from "@/lib/board/objects";
+import { buildTerrainObjectItems, pickTerrainObjects } from "@/lib/board/objects";
 import { MOUNTAIN_UNIT_LIFT, UnitBody } from "./board/UnitBody";
 import { TerrainObjectBillboard } from "./board/TerrainObjectBillboard";
 import { TerrainTile } from "./board/TerrainTile";
@@ -44,7 +40,6 @@ export interface HexGridProps {
   units: UnitState[];
   villageOwners: Record<string, number>;
   activePlayer: number;
-  hiddenUnitIds?: ReadonlySet<string>; // 相手から見えていない自軍ユニット(伏兵・潜水)
   selectedUnitId: string | null;
   moveTargets: ReadonlySet<string>;
   attackTargets: ReadonlySet<string>;
@@ -82,7 +77,6 @@ export default function HexGrid({
   units,
   villageOwners,
   activePlayer,
-  hiddenUnitIds,
   selectedUnitId,
   moveTargets,
   attackTargets,
@@ -125,17 +119,31 @@ export default function HexGrid({
   // 同じ列に混ぜて投影後yの昇順で描く。立体物はユニットよりわずかに手前に接地する
   // (OBJECT_FOOT_BIAS_RATIO)ため、同一ヘックスでは立体物が後=手前に描かれ、
   // ユニットの足元・下半身を隠す=本物の遮蔽になる(design_diorama.md「森の中」の解)
-  const occupiedKeys = new Set(renderUnits.map((u) => hexKey(u.pos)));
+  //
+  // 占有ヘックスの判定は「表示位置(displayPos)」基準にすること。u.pos(論理位置)は
+  // 移動確定と同時に目標ヘックスへ即更新されるため、u.posで判定すると移動アニメ中
+  // ずっと目標ヘックスが「占有済み」扱いになり、まだスプライトが到達していない
+  // 岩場・家屋等(occludes:true)の立体物がスライド中に薄く消えて見えるバグになる
+  // (本家Wesnothはスプライトの実位置で遮蔽を判定するため、ここで合わせる)
+  const occupiedKeys = new Set(
+    renderUnits.map((u) => {
+      const animated = animatedPositions?.get(u.id);
+      if (!animated) return hexKey(u.pos);
+      let nearest = u.pos;
+      let bestDistSq = Infinity;
+      for (const c of cells) {
+        const p = hexCenter(c);
+        const distSq = (p.cx - animated.cx) ** 2 + (p.cy - animated.cy) ** 2;
+        if (distSq < bestDistSq) {
+          bestDistSq = distSq;
+          nearest = c;
+        }
+      }
+      return hexKey(nearest);
+    }),
+  );
   // 立体物はエントリ単位で深度ソートに参加する(1ヘックスに複数体置けるように。
   // それぞれがoffset+jitterで別の足元位置を持ち、独立に前後関係を持つ)
-  // 操作性の救済(2026-07-08): 立体物(岩・木)は画面奥のヘックスの見える面積を
-  // 細い帯まで削るため、「入口の一個後ろ」を押そうとすると狙い所が小さすぎる。
-  // タップ判定自体は立体物の絵の下でも生きている(絵はpointerEvents無効)が、
-  // ユーザーは見えている地面を狙うので、目標選択中はハイライトが見えることが操作性そのもの。
-  // → 自分の真後ろ(画面上方向)の隣接ヘックスが行動対象(移動先・攻撃対象・雇用先)の間だけ、
-  //   その立体物を薄くして奥のハイライトと地面を見せる。選択解除で即座に戻る
-  const actionable = (k: string) =>
-    moveTargets.has(k) || attackTargets.has(k) || recruitTargets.has(k);
   const objectItems = buildTerrainObjectItems({
     map,
     cells,
@@ -148,9 +156,6 @@ export default function HexGrid({
       const def = SPRITE_REGISTRY.getTerrainSprite(terrainId);
       return def ? pickTerrainObjects(def, map, c, terrainId) : undefined;
     },
-    // 操作性の救済(2026-07-08): 真後ろのヘックスが行動対象の間だけ立体物を薄くし、
-    // 奥のハイライトと地面を見せる(詳細は lib/board/objects.ts と skill: board-rendering)
-    revealBehind: (c) => hasActionableBehind(map, c, viewCenter, actionable),
   });
 
   const billboardItems = [
@@ -348,7 +353,6 @@ export default function HexGrid({
                   hexX={item.c.x}
                   hexY={item.c.y}
                   hexOccupied={occupiedKeys.has(item.hexKey)}
-                  revealBehind={item.revealBehind}
                   ownerIndex={item.ownerIndex}
                 />
               </g>
@@ -418,7 +422,7 @@ export default function HexGrid({
                   ★
                 </text>
               )}
-              {/* ☠は右側(左肩はHP/XP縦バーの場所)。🌿(-0.35S)と縦に並ぶ */}
+              {/* ☠は右側(左肩はHP/XP縦バーの場所) */}
               {u.poisoned && (
                 <text
                   x={S * 0.55}
@@ -429,17 +433,6 @@ export default function HexGrid({
                   pointerEvents="none"
                 >
                   ☠
-                </text>
-              )}
-              {hiddenUnitIds?.has(u.id) && (
-                <text
-                  x={S * 0.55}
-                  y={-S * 0.35}
-                  textAnchor="middle"
-                  fontSize={13}
-                  pointerEvents="none"
-                >
-                  🌿
                 </text>
               )}
               {/* HP/XPバー: 本家Wesnoth式の左肩の縦バー(下から満ちる)。

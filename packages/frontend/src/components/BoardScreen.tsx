@@ -21,6 +21,7 @@ import {
   TransformWrapper,
   type ReactZoomPanPinchRef,
 } from "react-zoom-pan-pinch";
+import { TOD_FX } from "@/lib/board/timeOfDayFx";
 import {
   ABILITY_NAMES,
   canMoveTo,
@@ -34,7 +35,6 @@ import {
   hexEquals,
   hexDistance,
   hexKey,
-  isHiddenFrom,
   mapById,
   mapMeta,
   maxXpFor,
@@ -459,21 +459,6 @@ function BoardScreen(
     };
   }, [mode, reachable, board, map, myIndex, selectedUnit]);
 
-  // 自軍ユニットのうち、相手から見えていない(伏兵・潜水・霧の視界外)もの。
-  // 霧のとき相手ユニットの一部は自分に見えないため、この判定は「見えている範囲での推定」になる
-  const hiddenUnitIds = useMemo(() => {
-    if (myIndex < 0) return new Set<string>() as ReadonlySet<string>;
-    const opponent = 1 - myIndex;
-    const opponentVision = computeVisionSet(board, opponent);
-    return new Set(
-      board.units
-        .filter(
-          (u) => u.owner === myIndex && isHiddenFrom(u, opponent, board, opponentVision),
-        )
-        .map((u) => u.id),
-    ) as ReadonlySet<string>;
-  }, [board, myIndex]);
-
   // 霧: 自軍の視界(nullなら霧なし=全ヘックス可視)
   const myVision = useMemo(() => {
     if (myIndex < 0) return null;
@@ -494,6 +479,7 @@ function BoardScreen(
   const myPlayer = myIndex >= 0 ? board.players[myIndex] : null;
   const myIncome = myIndex >= 0 ? computeIncome(board, myIndex) : null;
   const tod = timeOfDayForTurn(board.scheduleId, board.startIndex, board.turnNumber);
+  const todFx = TOD_FX[tod.id];
   const myFaction = myPlayer ? getFaction(myPlayer.factionId) : null;
   const myLeader = board.units.find((u) => u.owner === myIndex && u.isLeader);
   const leaderOnKeep =
@@ -731,7 +717,7 @@ function BoardScreen(
           doubleClick={{ disabled: true }}
         >
           <TransformComponent
-            wrapperStyle={{ width: "100%", height: "100%" }}
+            wrapperStyle={{ width: "100%", height: "100%", filter: todFx.filter }}
             contentStyle={{ padding: CONTENT_PADDING }}
           >
             <HexGrid
@@ -739,7 +725,6 @@ function BoardScreen(
               units={board.units}
               villageOwners={board.villageOwners ?? {}}
               activePlayer={board.activePlayer}
-              hiddenUnitIds={hiddenUnitIds}
               selectedUnitId={selectedUnit?.id ?? null}
               moveTargets={moveTargets}
               attackTargets={attackTargets}
@@ -754,6 +739,24 @@ function BoardScreen(
             />
           </TransformComponent>
         </TransformWrapper>
+
+        {/* 時間帯の色被せ(2026-07-10): 夕方・夜(first/second watch)・夜明けを
+            薄暗く・色味で語る。盤面のクリック判定はTransformWrapper側にあるため
+            pointerEvents:noneで操作を妨げない。値の一元管理はlib/board/timeOfDayFx.ts
+            (/dev/terrain検収ページと共有) */}
+        {todFx.overlay && (
+          <div
+            aria-hidden
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: todFx.overlay,
+              mixBlendMode: "multiply",
+              pointerEvents: "none",
+              zIndex: 2,
+            }}
+          />
+        )}
 
         {/* バージョン表示(2026-07-10): デプロイ先で今どのビルドが動いているかを
             切り分けるための最小限の手がかり。package.jsonのversion+Vercelの

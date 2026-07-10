@@ -164,7 +164,7 @@ export const NORTHERNERS: Faction = {
       defenseOverrides: ORC_TROLL_DEFENSE_OVERRIDES,
       abilities: ["regenerates"],
       attacks: [
-        { id: "club", name: "Hammer", damage: 14, count: 2, type: "impact", range: "melee" }, // 2026-07-08 ユーザー指定(id不変。旧棍棒)
+        { id: "club", name: "Club", damage: 14, count: 2, type: "impact", range: "melee" }, // 2026-07-11 修正: Lv2はClub表記が正しい(id不変)
       ],
       // 2026-07-08 ユーザー指定: 分厚い体皮で斬撃・刺突に強いが秘術に弱い
       resistances: { blade: 20, pierce: 20, arcane: -10 },
@@ -274,7 +274,7 @@ export const NORTHERNERS: Faction = {
       defenseOverrides: ORC_TROLL_DEFENSE_OVERRIDES,
       abilities: ["regenerates"],
       attacks: [
-        { id: "fist", name: "Club", damage: 7, count: 2, type: "impact", range: "melee" }, // 2026-07-08 ユーザー指定(id不変。旧拳)
+        { id: "fist", name: "Fist", damage: 7, count: 2, type: "impact", range: "melee" }, // 2026-07-11 修正: Lv1はFist表記が正しい(id不変)
       ],
       // 2026-07-08 ユーザー指定: 分厚い体皮で斬撃・刺突に強いが秘術に弱い
       resistances: { blade: 20, pierce: 20, arcane: -10 },

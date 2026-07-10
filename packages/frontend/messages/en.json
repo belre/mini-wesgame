@@ -59,6 +59,8 @@
     "cancel": "Cancel",
     "endTurn": "End turn",
     "surrender": "Surrender",
+    "surrenderConfirmMsg": "Surrender this match? You'll lose immediately.",
+    "surrenderConfirmButton": "Surrender",
     "promotionHeading": "Choose {name}'s promotion",
     "moveConfirmQuestion": "Move {name} to ({x},{y})?",
     "movePlanDetail": "Path: {hexCount} hexes ・ cost {cost} → {remaining} move left",

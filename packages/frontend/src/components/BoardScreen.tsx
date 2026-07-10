@@ -179,6 +179,7 @@ function BoardScreen(
   const [fabOpen, setFabOpen] = useState(false);
   const [rulesOpen, setRulesOpen] = useState(false);
   const [endTurnConfirm, setEndTurnConfirm] = useState(false);
+  const [surrenderConfirm, setSurrenderConfirm] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -325,6 +326,7 @@ function BoardScreen(
         setMode({ kind: "idle" });
         setFabOpen(false);
         setEndTurnConfirm(false);
+        setSurrenderConfirm(false);
         // 特筆イベントの通知(伏兵による中断・レベルアップ)
         const notices: string[] = [];
         if (events.some((e) => e.type === "moveInterrupted")) {
@@ -821,6 +823,22 @@ function BoardScreen(
           </div>
         )}
 
+        {/* 降参の確認トースト(2026-07-10): ワンタップで即敗北になると不快感が
+            出やすいため、他の破壊的操作と同じ「開く→選ぶ」の2段確認にする */}
+        {surrenderConfirm && (
+          <div className="toast">
+            <span>{t("surrenderConfirmMsg")}</span>
+            <button
+              className="danger"
+              disabled={pending}
+              onClick={() => submit({ type: "surrender" })}
+            >
+              {t("surrenderConfirmButton")}
+            </button>
+            <button onClick={() => setSurrenderConfirm(false)}>{t("cancel")}</button>
+          </div>
+        )}
+
         {/* ルール早見(常設): 試合中いつでも押せる。宣伝デモとして「詳しくは知らなくても
             遊べる」を保ちつつ、気になった人だけ見返せる導線(2026-07-10) */}
         <button className="help-fab" onClick={() => setRulesOpen((v) => !v)}>
@@ -868,7 +886,7 @@ function BoardScreen(
                   disabled={!isMyTurn || pending}
                   onClick={() => {
                     setFabOpen(false);
-                    submit({ type: "surrender" });
+                    setSurrenderConfirm(true);
                   }}
                 >
                   {t("surrender")}

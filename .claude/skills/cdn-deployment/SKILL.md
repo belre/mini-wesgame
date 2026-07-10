@@ -1,84 +1,82 @@
 ---
 name: cdn-deployment
-description: アセット配信とデプロイの運用手順。スプライトパックのビルド→CloudFrontへの配置→CORS設定→検証、およびVercelへのフロントエンドデプロイのときに使う
+description: アセット配信とデプロイの運用手順。スプライトパック/terrainパックのビルドとwesnoth-contents-deliveryへの配置、およびVercel・itch.ioへのデプロイのときに使う
 ---
 
 # CDN展開とデプロイ
 
-最終更新: 2026-07-08。設計と実録は docs/asset_delivery.md(必読。CORSの罠5点+真因)。
+最終更新: 2026-07-10。設計の背景は docs/asset_delivery.md。
+mini-wesgameは **CPU戦+チュートリアルのみでバックエンド無し**(`infra/`・`packages/backend`は
+このリポジトリに存在しない。旧parle-stroikaのAWS/DynamoDB構成は移植されていない)。
+`output: "export"`(next.config.ts)で完全な静的HTMLへ書き出せるため、
+**Vercelとitch.ioで同じビルド成果物(`packages/frontend/out/`)を使い回せる**。
 
-## 1. 配信の3層(前提知識)
+## 1. 配信の2層(前提知識。docs/asset_delivery.md参照)
 
-| 層 | 対象 | 备考 |
+| 層 | 対象 | 配信方法 |
 |---|---|---|
-| アプリ組み込み | 地形32点+ユニットbase絵 | Next.jsバンドル。デプロイに自動で付いてくる |
-| 陣営パック(.psp) | ユニットアニメ全フレーム | CDNから1fetch/陣営。1008→6リクエスト |
-| 個別URL | フォールバック | パック失敗時に自動劣化+盤面トースト通知 |
+| スプライトパック | ユニットのアニメフレーム(陣営単位)+terrain一式 | .psp を1fetch → blob URL展開。`NEXT_PUBLIC_SPRITE_PACK_BASE` |
+| 個別URL | パック無効時・取得失敗時・unit-baseフォールバック絵 | `/sprites/...` を1枚ずつ(自動劣化)。`NEXT_PUBLIC_ASSET_BASE` |
 
-## 2. パックのビルドとCloudFront配置
+どちらも既定値は `next.config.ts` で jsDelivr 経由の
+`https://cdn.jsdelivr.net/gh/belre/wesnoth-contents-delivery@main/mini-wesgame` を指している。
+**mini-wesgame自身のビルドにはWesnothのGPL/CC-BY-SA画像を一切含めない**
+(公開デプロイのGPLv3第6条(d)対応。同梱していた時代の名残の記述に注意: 古いコミット・
+docsに「アプリ組み込み」「dioramaImages.ts」等とあれば2026-07-10以前の話)。
+
+## 2. パックの再生成・delivery repoへの反映(素材を追加/変更したときだけ)
 
 ```bash
 cd packages/frontend
-node scripts/fetch-demo-sprites.mjs        # 前提: public/sprites/ を用意
-npx tsx scripts/build-sprite-packs.mts     # public/packs/units-<faction>.psp を生成
-
-aws s3 sync public/packs/ s3://<バケット>/packs/ --content-type application/octet-stream
+node scripts/fetch-demo-sprites.mjs        # 上流(wesnoth/wesnoth)から個別PNGを public/sprites/ に取得
+npx tsx scripts/build-sprite-packs.mts     # public/packs/{units-<faction>,terrain}.psp を生成
 ```
 
-CloudFront設定(1回だけ):
-
-1. **CORSは「レスポンスヘッダポリシー SimpleCORS」一択**(マネージドID:
-   `60669652-455b-4ae9-85a4-c4c02393f86c`)。コンソールで反映されない事象があったため、
-   確実なのはスクリプト: `bash infra/scripts/attach-simplecors.sh <ディストリビューションID>`
-2. S3側CORSに頼る場合は AllowedOrigins に**開発(localhost)・本番の全オリジンを列挙**
-   (漏れたオリジンだけ壊れ、キャッシュ変種で「動いたり動かなかったり」に見える — 実録参照)
-3. 有効化: `NEXT_PUBLIC_SPRITE_PACK_BASE=https://<ドメイン>/packs`(ビルド時env。
-   未設定=パック無効=従来動作)
-
-検証(必ず実ブラウザで。curlだけで安心しない):
+生成物・`public/sprites/`一式を `~/github/wesnoth-contents-delivery/mini-wesgame/` へコピーし、
+そのリポジトリでcommit・push(GitHub: `belre/wesnoth-contents-delivery`)。jsDelivrは
+push後すぐ配信されるが、branch参照(`@main`)は最大12時間ほどキャッシュされることがあるため、
+急ぐ場合は purge APIを叩く:
 
 ```bash
-curl -sI -H "Origin: http://localhost:3010" https://<ドメイン>/packs/units-loyalists.psp \
-  | grep -iE "HTTP/|access-control"    # 200 + access-control-allow-origin
-# → チュートリアルを開き DevTools Network で /packs/ 200×2・/sprites/ 0件
-# 失敗時は盤面トースト「高速配信(CDN)への接続に失敗しました」が出る(ゲームは続行)
+curl "https://purge.jsdelivr.net/gh/belre/wesnoth-contents-delivery@main/mini-wesgame/<path>"
 ```
 
-## 3. Vercelへのフロントエンドデプロイ(※2026-07-08時点で未実施・未検証の手順)
+検証は実ブラウザで(DevTools Network): `units-loyalists.psp`・`units-northerners.psp`・
+`terrain.psp` の3リクエストがCDN宛てに200で返り、`/sprites/...`個別リクエストが
+(unit-baseフォールバック絵を除いて)出ていないこと。
 
-モノレポなのでVercel側の設定が肝。想定手順(実施時に検証して本節を更新すること):
+**ハマりどころ(2026-07-10実測、2件)**: パックを追加しても地形の描画側が
+`resolveAssetUrl()`を通していないと個別リクエストのまま(`TerrainTile.tsx`/
+`TerrainObjectBillboard.tsx`で修正済み)。また地形のプリロードが`packsSettled()`を
+待たずに`loadImage`するとパック登録を追い越して個別リクエストに漏れる
+(`preloadTerrainSprite`/`useImagesReady`で修正済み)。新しい描画経路を足すときは
+この2点(resolveAssetUrl経由か・packsSettled待ちか)を必ず確認すること。
 
-1. VercelでGitHubリポジトリをimportし、**Root Directory を `packages/frontend`** に設定
-   (Framework Preset: Next.js)。モノレポ依存(core-engine等)はnpm workspacesで
-   リポジトリルートからinstallされる — Vercelは自動でルートのpackage-lock.jsonを検出するが、
-   効かない場合は Install Command を `npm install --prefix ../..` 等に調整
-2. **Build Commandに生成物の準備を足す**:
-   ```
-   node scripts/fetch-demo-sprites.mjs && next build
-   ```
-   - fetch-demo-sprites: `public/sprites/`(ローカルdev用フォールバック。
-     2026-07-10以降は`NEXT_PUBLIC_ASSET_BASE`が既定でCDN(wesnoth-contents-delivery、
-     jsDelivr経由)を指すため無くてもtypecheck/buildは落ちない)
-   - build-sprite-packs(.psp生成)は不要になった。アニメフレームパックは
-     `wesnoth-contents-delivery`にビルド済みのものを置いてあり、
-     `NEXT_PUBLIC_SPRITE_PACK_BASE`の既定値がそれを指す
-3. 環境変数: `NEXT_PUBLIC_SPRITE_PACK_BASE`/`NEXT_PUBLIC_ASSET_BASE`は
-   `next.config.ts`にjsDelivr既定値を設定済みなので、通常は追加設定不要
-   (自前のCDNに差し替えたい場合だけVercelのプロジェクト環境変数で上書きする)。
-   バックエンド(対戦API)を繋ぐ場合はAPI URL系も(CPU戦特化なら不要)
-4. **CPU戦特化リリースならバックエンド設定ゼロで動く**はず(チュートリアルは
-   ローカル完結)。ロビー(/)はDynamoDB接続がないと500になるため、リリース形態に
-   応じてトップページの差し替えを検討
-5. サイズ感の目安: アプリ本体約2.1MB+スプライト同梱時+6.5MB(Vercel制限には遠い)
+## 3. Vercelへのデプロイ
 
-## 4. インフラ(AWS CDK)側
+1. VercelでGitHubリポジトリ(`belre/mini-wesgame`)をimportし、**Root Directory を
+   `packages/frontend`** に設定(Framework Preset: Next.js。`output:"export"`により
+   Vercelは静的サイトとして扱う)
+2. Root Directory設定内の**「Include files outside of the Root Directory」を必ずON**
+   (npm workspacesで`core-engine`を参照しているため。OFFだと依存解決に失敗する)
+3. **Build Command・Install Commandは既定のままでよい**(`next build`のみで完結。
+   `public/sprites/`が無くてもtypecheck/buildは通る。スプライトパックは
+   `NEXT_PUBLIC_SPRITE_PACK_BASE`/`NEXT_PUBLIC_ASSET_BASE`の既定値=jsDelivrから配信される)
+4. 環境変数は通常追加不要(自前のCDNに差し替えたい場合だけ上記2変数をVercel側で上書き)
+5. Deploy。バックエンド設定はゼロで動く(チュートリアル・CPU戦ともローカル完結)
 
-- `npm run cdk:synth` でCFnテンプレート確認。S3+CloudFront+DynamoDB+Lambdaは
-  infra/lib/parle-stroika-stack.ts(出力: AssetBaseUrl等)
-- DynamoDBテーブル定義を変えるときは **infra/lib/parle-stroika-stack.ts と
-  packages/backend/scripts/create-local-tables.ts の2箇所を必ず同期**(CLAUDE.md絶対則)
+## 4. itch.io(静的ファイル)へのデプロイ
+
+```bash
+cd packages/frontend
+npm run build   # packages/frontend/out/ が生成される(sprites取得は不要)
+cd out && zip -r ../itch-build.zip .
+```
+
+itch.ioでプロジェクト作成 → Kind of project: **HTML** → zipをアップロード →
+`index.html`に「This file will be played in the browser」をチェック → 公開設定を選んで保存。
 
 ## 5. Sonnet引き継ぎの残り(docs/asset_delivery.md 末尾と同期)
 
-共通パック分離 / webp化 / パック名への内容ハッシュ / PWAキャッシュ統合 /
-リクエスト数検証のE2E自動化 / 本節3(Vercel)の実施検証と更新
+共通パック分離(飛び道具・halo等の陣営間重複) / webp化 / パック名への内容ハッシュ /
+PWAキャッシュ統合 / リクエスト数検証のE2E自動化

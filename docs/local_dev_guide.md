@@ -144,6 +144,8 @@ npm run cdk:deploy -- -c allowedOrigins=https://<your-app>.vercel.app,http://loc
 |---|---|---|
 | `NEXT_PUBLIC_API_BASE` | ApiUrl | ブラウザ→API Gateway 直叩き |
 | `API_BASE_URL` | ApiUrl | Server Component / Server Action 用 |
+| `NEXT_PUBLIC_DISCORD_INVITE_URL` | Discordサーバー招待URL | 試合終了オーバーレイのリンク(`GameOverOverlay.tsx`)。未設定時はリンク非表示 |
+| `NEXT_PUBLIC_X_INVITE_URL` | X(Twitter)アカウントURL | 同上 |
 
 Vercel 側は Root Directory を `packages/frontend` に設定してデプロイする(モノレポ)。
 

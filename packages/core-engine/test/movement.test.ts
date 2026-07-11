@@ -239,9 +239,10 @@ describe("軽装(defenseType: lightfoot。本家elusivefoot準拠 2026-07-08)", 
     expect(moveCostFor(getUnitDef("spearman"), terrainById("swamp"))).toBe(3);
   });
 
-  it("岩場(mountains)にも例外的に進入できる(コスト3。walk型は不可のまま)", () => {
+  it("岩場(mountains)は本家準拠でwalk/lightfootともコスト3。cavalryのみ不可", () => {
     const nightblade = getUnitDef("orcish_nightblade");
     expect(moveCostFor(nightblade, terrainById("mountains"))).toBe(3);
-    expect(moveCostFor(getUnitDef("spearman"), terrainById("mountains"))).toBe(IMPASSABLE);
+    expect(moveCostFor(getUnitDef("spearman"), terrainById("mountains"))).toBe(3);
+    expect(moveCostFor(getUnitDef("cavalryman"), terrainById("mountains"))).toBe(IMPASSABLE);
   });
 });

@@ -8,12 +8,14 @@ export const IMPASSABLE = 99;
 // cavalry/lightfootは防御だけでなく移動コストも歩兵(walk)と別枠。
 // cavalryはユーザーの現地調査(loyalists.csv)でmountedの実測値が確定したため反映
 // (森・トーチカの防御は当初の機械的換算=0%から30%/20%に訂正)。
-// lightfootは本家elusivefoot準拠(2026-07-08)。歩兵型の壁である岩場(mountains)にも
-// 例外的に進入できる — 「山を越えられる兵科を限定する」という方針の実例
-// (ナイトブレード・アサシン・リザードマン等の身軽な兵科向け)
+// lightfootは本家elusivefoot準拠(2026-07-08)。
+//
+// 2026-07-12: 本家units.cfgの[movetype]定義を直接照合し、岩場(mountains)のwalk
+// 移動コストを本家smallfoot準拠(コスト3)に修正した。旧実装は「岩場は飛行・軽装のみ
+// 通れる壁」という意図的な逸脱だったが、mini-wesgameは本家準拠を志向する方針のため
+// 解消した(以前のコメントには「本家mountedもコスト3」とあったが誤りで、実際は
+// mountedに岩場の項目自体が無い=本家でも進入不可。cavalryのIMPASSABLEは変更不要)。
 // 意図的に本家から外れている箇所(このエンジン独自の設計判断):
-//   - 岩場(mountains)のwalk/cavalry進入不可: 本家smallfoot/mountedはコスト3で進入できるが、
-//     「岩場は飛行・軽装のみ通れる壁」という既存の設計を維持(データ整理の対象外)
 //   - 障害物(obstacle)・場外(void): 本家に対応地形がない完全オリジナル。全タイプ進入不可のまま
 export const TERRAINS: Record<string, TerrainDef> = {
   grassland: {
@@ -61,12 +63,10 @@ export const TERRAINS: Record<string, TerrainDef> = {
   mountains: {
     id: "mountains",
     name: "Rocky Ground",
-    // 地上部隊は侵入不可の岩山。飛行と軽装(lightfoot)だけが越えられる「壁」として機能する
-    // (深水の陸版)。本家smallfoot/mountedはコスト3で進入できるが、このゲームは意図的に
-    // walk/cavalryは不可のまま(2026-07-08 データ整理の対象外・既存設計を維持)。
-    // 軽装だけは本家elusivefoot準拠でコスト3進入可 — 「山を越えられる兵科を限定する」の実例。
-    // defenseBonus の walk/swim/cavalry は到達不能だが、型の完全性と将来の緩和に備えて残す
-    moveCost: { walk: IMPASSABLE, fly: 1, swim: IMPASSABLE, cavalry: IMPASSABLE, lightfoot: 3 },
+    // 本家smallfoot/elusivefoot準拠でコスト3進入可(2026-07-12修正。旧実装は
+    // walk進入不可の独自仕様だった)。cavalry/swimは本家mounted/swimmerに岩場の
+    // 項目自体が無い=本家でも進入不可のためIMPASSABLEのまま(変更不要)
+    moveCost: { walk: 3, fly: 1, swim: IMPASSABLE, cavalry: IMPASSABLE, lightfoot: 3 },
     defenseBonus: { walk: 60, fly: 50, swim: 20, cavalry: 50, lightfoot: 70 },
   },
   shallow_water: {

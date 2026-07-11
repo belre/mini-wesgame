@@ -26,9 +26,11 @@ describe("砂漠(desert)", () => {
 });
 
 describe("山(mountains)", () => {
-  it("地上部隊は侵入不可、飛行のみ通行できる(深水の陸版)", () => {
-    expect(TERRAINS.mountains.moveCost.walk).toBe(IMPASSABLE);
+  it("本家準拠(2026-07-12): walk/lightfootはコスト3で進入できる。swim/cavalryは侵入不可", () => {
+    expect(TERRAINS.mountains.moveCost.walk).toBe(3);
+    expect(TERRAINS.mountains.moveCost.lightfoot).toBe(3);
     expect(TERRAINS.mountains.moveCost.swim).toBe(IMPASSABLE);
+    expect(TERRAINS.mountains.moveCost.cavalry).toBe(IMPASSABLE);
     expect(TERRAINS.mountains.moveCost.fly).toBe(1);
   });
 });

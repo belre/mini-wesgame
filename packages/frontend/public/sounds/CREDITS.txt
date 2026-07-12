@@ -1,0 +1,7 @@
+click.wav
+---------
+Source: Kenney UI Audio pack ("click4.wav")
+  https://kenney.nl/assets/ui-audio
+  (fetched via https://github.com/Calinou/kenney-ui-audio, same files repackaged for easy use)
+Author: Kenney Vleugels (www.kenney.nl)
+License: CC0 1.0 Universal (public domain). Attribution not required, credited here anyway.

@@ -2,6 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
+import ClickSoundListener from "@/components/ClickSoundListener";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   const [client] = useState(
@@ -15,5 +16,10 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         },
       }),
   );
-  return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+  return (
+    <QueryClientProvider client={client}>
+      <ClickSoundListener />
+      {children}
+    </QueryClientProvider>
+  );
 }

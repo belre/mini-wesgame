@@ -1,25 +1,28 @@
-# Devlog 下書き
+# Devlog drafts
 
-itch.io / Discord / X 等に投稿するdevlogの下書き置き場。新しいバッチを最上部に追記していく。
-実際の投稿文はここから適宜整えて使う想定(このファイル自体は投稿しない)。
+Draft notes for devlogs posted to itch.io / Discord / X (published in English).
+Newest batch goes at the top. Edit/trim before actually posting — this file itself
+is not published.
 
-## v0.1.3(下書き・未リリース)
+## v0.1.3
 
-プレイテストのフィードバックから、見た目と操作感の細かい不具合をまとめて直しました。
+A batch of visual and feel fixes based on playtester feedback.
 
-- **自軍リーダーの色がおかしい不具合を修正**: 盤面上でリーダーユニット(隊長)のマント・鎧が、
-  陣営に関係なく赤っぽく表示されてしまう不具合がありました。スプライトパック経由のユニットで
-  チームカラー変換が効いていなかったのが原因です。人間・オークどちらのリーダーも正しく
-  自軍の色(青)で表示されるようになりました。
-- **ターン終了確認が過剰に出る問題を調整**: 「◯体が未行動です」という確認が、移動したけど
-  攻撃対象がいなかっただけのユニットにも出てしまい、確認が多すぎる印象になっていました。
-  実際に行動の余地がある場合だけ聞くように調整しました。あわせて、リーダーがそのターン中に
-  1回でも雇用をしていれば「行動した」扱いにするようにしました。
-- **選択色・アイコンの色を自軍カラーに統一**: ユニットを選んだ時の枠、陣営選択画面のホバー枠、
-  陣営選択・雇用シートのユニットアイコンが、素材の生の色(赤っぽい色)のまま表示されていました。
-  すべて実際の自軍カラー(青)に統一しました。
-- **リーダー撃破時の演出が勝利画面に隠れてしまう不具合を修正**: 敵リーダーを倒して勝利が
-  確定する瞬間だけ、撃破演出よりも先に勝利画面が出てしまい、決着の一撃が見えなくなって
-  いました。演出が終わってから勝利画面を出すようにしました。
+- **Fixed leader units showing the wrong team color**: on the board, leader units
+  (commanders) had their cape/armor rendering in a reddish color regardless of
+  which side they belonged to. The root cause was a caching bug that broke team-color
+  recoloring for any unit served through the sprite pack. Both factions' leaders now
+  show the correct team color (blue).
+- **Tuned the "end turn?" confirmation**: it used to nag about units that had already
+  moved but simply had no attack target nearby. Now a unit only counts as "hasn't
+  acted" if it hasn't moved or attacked at all yet this turn. Recruiting also now
+  counts as the leader having acted, so it won't get flagged just for recruiting.
+- **Unified selection/icon colors to the team color**: the unit-selection ring, the
+  faction-select hover border, and the unit icons on the faction-select and recruit
+  screens were all showing the raw asset color (reddish) instead of your actual team
+  color. Everything now matches your team color (blue).
+- **Fixed the victory screen preempting the finishing-blow animation**: killing the
+  enemy leader used to instantly show the victory screen before the kill animation
+  could play. The victory screen now waits for the animation to finish.
 
-<!-- 次のバッチはここに追記 -->
+<!-- append the next batch here -->

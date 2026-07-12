@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
 import ClickSoundListener from "@/components/ClickSoundListener";
+import MuteToggle from "@/components/MuteToggle";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   const [client] = useState(
@@ -19,6 +20,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={client}>
       <ClickSoundListener />
+      <MuteToggle />
       {children}
     </QueryClientProvider>
   );

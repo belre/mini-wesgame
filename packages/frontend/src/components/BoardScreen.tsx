@@ -32,6 +32,7 @@ import {
   getFaction,
   getUnitDef,
   hasLeadershipSupport,
+  hasRemainingAction,
   hexEquals,
   hexDistance,
   hexKey,
@@ -486,8 +487,16 @@ function BoardScreen(
   const myLeader = board.units.find((u) => u.owner === myIndex && u.isLeader);
   const leaderOnKeep =
     !!myLeader && myIndex >= 0 && hexEquals(myLeader.pos, meta2.keeps[myIndex]);
+  // 未行動判定: movesLeft/attacksLeftの残量だけでなく、実際に意味のある行動が
+  // 残っているか(hasRemainingAction)で見る。移動済みで攻撃対象が隣にいない
+  // ユニットまで「未行動」に含めると過剰な確認になる(2026-07-12 プレイテスト指摘)。
+  // リーダーは雇用だけしても移動力・攻撃回数を消費しないため、このターン中に
+  // 一度でも雇用していれば「行動した」扱いにして確認対象から外す
   const unactedCount = board.units.filter(
-    (u) => u.owner === myIndex && (u.movesLeft > 0 || u.attacksLeft > 0),
+    (u) =>
+      u.owner === myIndex &&
+      !(u.isLeader && myPlayer?.hasRecruitedThisTurn) &&
+      hasRemainingAction(u, board.units),
   ).length;
 
   const onHexClick = (coord: HexCoord, screenPos: { x: number; y: number }) => {

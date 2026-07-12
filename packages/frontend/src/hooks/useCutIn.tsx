@@ -27,6 +27,10 @@ export function useCutIn(
   // 相手ターンログ(被攻撃)のリプレイ再生。ユーザーの明示操作
   playReplay: (entry: AttackedEntry) => void;
   stage: ReactNode;
+  // 現在カットイン再生中の戦闘(なければnull)。呼び出し側が「演出が終わるまで
+  // 結果表示(勝敗オーバーレイ等)を待つ」ために公開する(2026-07-12: リーダー撃破が
+  // 演出より先に勝利画面で覆われる不具合の修正)
+  current: CombatPlaybackInput | null;
 } {
   // 盤面内アニメ(BoardScreen内蔵)とは別の第2再生インスタンス
   const { fx, enqueue, current } = useCombatAnimations();
@@ -48,5 +52,6 @@ export function useCutIn(
       if (input) enqueue(input);
     },
     stage,
+    current,
   };
 }

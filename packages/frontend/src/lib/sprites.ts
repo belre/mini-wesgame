@@ -219,6 +219,28 @@ async function loadBaseImage(spriteKey: string, owner: number): Promise<string |
   return teamColoredSrc(bundled, owner) ?? bundled;
 }
 
+// 立ち絵アイコン単体をチームカラー変換して返すフック(陣営選択・雇用シート等、
+// アニメ不要な一枚絵表示用)。原色のまま一瞬出た後に着色版へ差し替わる
+// (loadBaseImageの結果を待つ間は原色を暫定表示。円描画へは後退しない)
+export function useTeamColoredIcon(spriteKey: string, owner: number): string | null {
+  const bundled = UNIT_BASE_IMAGES[spriteKey] ?? null;
+  const [src, setSrc] = useState<string | null>(bundled);
+
+  useEffect(() => {
+    setSrc(bundled);
+    if (!bundled) return;
+    let alive = true;
+    void loadBaseImage(spriteKey, owner).then((colored) => {
+      if (alive && colored) setSrc(colored);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [spriteKey, owner, bundled]);
+
+  return src;
+}
+
 export function useUnitSprite(spriteKey: string, owner: number): string | null {
   const def = SPRITE_REGISTRY.getUnitSprite(spriteKey);
   const [ready, setReady] = useState(false);
@@ -261,7 +283,10 @@ export function useUnitSprite(spriteKey: string, owner: number): string | null {
       if (cancelled) return;
       const seq = mode === "standing" ? def.standing : def.idle ?? def.standing;
       const frame = seq[index % seq.length];
-      setSrc(resolveAssetUrl(frame.image));
+      // 元URLのまま保持する(解決はUnitBody.tc()に委ねる)。ここでblob化すると
+      // teamColoredSrc()のキャッシュキー(元URL)と一致しなくなり、チームカラーが
+      // 常に不発になる(2026-07-12 実測: パック登録済みのユニットのみ再現するバグ)
+      setSrc(frame.image);
       index += 1;
       if (index >= seq.length) {
         index = 0;
@@ -315,7 +340,7 @@ export function useStandingOverlays(spriteKey: string): string[] {
         const tick = () => {
           if (cancelled) return;
           const frame = o.frames[index % o.frames.length];
-          current[layer] = resolveAssetUrl(frame.image);
+          current[layer] = frame.image;
           setSrcs(current.filter((s): s is string => s !== null));
           index += 1;
           timers[layer] = window.setTimeout(tick, frame.duration);

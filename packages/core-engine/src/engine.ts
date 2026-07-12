@@ -248,6 +248,7 @@ export function createInitialState(
       factionId: p.factionId,
       gold: STARTING_GOLD,
       recruitUnitIds: p.recruitUnitIds,
+      hasRecruitedThisTurn: false,
     })),
     units,
     villageOwners: {},
@@ -612,6 +613,7 @@ export function applyAction(
       // 特性はサーバー側の乱数でここで確定する(雇用したターンは行動不可)
       const unit = makeUnitState(def, actorIndex, action.target, rng);
       next.units.push(unit);
+      player.hasRecruitedThisTurn = true;
       events.push({ type: "recruited", unit });
       break;
     }
@@ -647,6 +649,7 @@ export function applyAction(
       if (next.activePlayer === 0) {
         next.turnNumber += 1;
       }
+      next.players[next.activePlayer].hasRecruitedThisTurn = false;
       // ターン開始処理(手番が回ってきた側): 毒・回復・遅化解除 → リフレッシュ
       // 回復源(村8 / 再生8 / 隣接ヒーラー4or8 / 休息2)は加算せず最大値のみ適用する
       const myUnits = next.units.filter((u) => u.owner === next.activePlayer);

@@ -158,6 +158,13 @@ select {
   object-fit: contain;
 }
 
+/* プレイヤーは常に青軍(owner 0)なので、選ぶ操作のアクセントも
+   実際のチームカラー(#2E419B)に揃える(盤面上のユニット選択リングと統一) */
+.faction-select-btn:hover:not(:disabled),
+.faction-select-btn:focus-visible {
+  border-color: #2e419b;
+}
+
 /* ---- 試合終了オーバーレイ(2026-07-10) ---- */
 
 .game-over-overlay {

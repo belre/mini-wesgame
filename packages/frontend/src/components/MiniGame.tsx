@@ -145,7 +145,11 @@ function GameSession({
       overlay={<FirstTurnGuide step={guideStep} onDismiss={() => setGuideDone(true)} />}
     >
       {cutIn.stage}
-      {outcome && <GameOverOverlay outcome={outcome} onRematch={onExit} />}
+      {/* 勝敗確定(status:"finished")はキル判定と同時に即座に反映されるが、
+          撃破演出(カットイン)はその後キューに積まれて再生される。演出中に
+          勝利画面で覆ってしまうと決着の一撃が見えなくなるため、演出が
+          終わる(current===null)まで表示を遅らせる(2026-07-12) */}
+      {outcome && !cutIn.current && <GameOverOverlay outcome={outcome} onRematch={onExit} />}
     </BoardScreen>
   );
 }

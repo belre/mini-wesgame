@@ -125,7 +125,7 @@ export function UnitBody({
           cy={cy}
           r={S * 0.52}
           fill={OWNER_COLORS[owner]}
-          stroke={selected ? "#ffffff" : "#10141a"}
+          stroke={selected ? "#2E419B" : "#10141a"}
           strokeWidth={selected ? 3 : 1.5}
         />
         <text
@@ -164,7 +164,7 @@ export function UnitBody({
           体の中心を覆う不可視円で親<g>のonClick(=このユニットのヘックス選択)を受ける */}
       <circle cx={cx} cy={cy} r={S * 0.55} fill="none" pointerEvents="all" />
       {selected && (
-        <circle cx={cx} cy={cy} r={S * 0.58} fill="none" stroke="#ffffff" strokeWidth={3} />
+        <circle cx={cx} cy={cy} r={S * 0.58} fill="none" stroke="#2E419B" strokeWidth={3} />
       )}
       {/* Wesnothのユニット画像は基本72×72 = ヘックス幅(2S)。攻撃ではみ出す絵は
           キャンバスが大きい(重歩兵168x104等)ため、原寸(1px=1盤面単位)で中心描画する。

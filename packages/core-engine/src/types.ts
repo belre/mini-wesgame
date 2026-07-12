@@ -227,6 +227,10 @@ export interface PlayerState {
   gold: number;
   // 雇用可能ユニットの上書き(任意)。未指定は陣営のrecruitableUnitIds(モード制限用)
   recruitUnitIds?: string[];
+  // このターン中に雇用を行ったか(次の自ターン開始でfalseに戻る)。
+  // 雇用はリーダーの移動力・攻撃回数を消費しないが、プレイヤーの意思決定としては
+  // 「行動した」ことに変わりない。終了ターン確認の未行動判定で使う(2026-07-12)
+  hasRecruitedThisTurn: boolean;
 }
 
 export type MatchStatus = "active" | "finished";

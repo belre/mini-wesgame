@@ -86,6 +86,7 @@
 | [sprite_guide.md](sprite_guide.md) | Wesnothスプライトの取得・ライセンス(GPL)・監査 | ユニット絵に触るとき |
 | [local_dev_guide.md](local_dev_guide.md) | ローカル検証(Docker/DynamoDB)とデプロイ手順 | 環境構築時 |
 | [backlog.md](backlog.md) | 残課題の整理(優先度・完了記録・リリース形態メモ) | 次にやることを決めるとき |
+| [devlog.md](devlog.md) | itch.io等向けdevlogの下書き置き場(バッチごとに追記) | リリース内容を告知するとき |
 | [openapi.yaml](openapi.yaml) | 対戦APIのOpenAPI仕様(エンドポイント・スキーマ・エラーコード) | APIを叩く/変えるとき |
 
 ## 開発クイックリファレンス

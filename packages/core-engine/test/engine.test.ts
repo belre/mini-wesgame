@@ -262,6 +262,19 @@ describe("applyAction: recruit", () => {
       ),
     ).toThrow(/ゴールド/);
   });
+
+  it("雇用すると hasRecruitedThisTurn が立つ(相手側は変化しない)", () => {
+    const state = newMatch();
+    expect(state.players[0].hasRecruitedThisTurn).toBe(false);
+    const { state: next } = applyAction(
+      state,
+      P0,
+      { type: "recruit", unitDefId: "spearman", target: { x: 1, y: 1 } },
+      alwaysHit,
+    );
+    expect(next.players[0].hasRecruitedThisTurn).toBe(true);
+    expect(next.players[1].hasRecruitedThisTurn).toBe(false);
+  });
 });
 
 describe("applyAction: endTurn", () => {
@@ -291,6 +304,22 @@ describe("applyAction: endTurn", () => {
     const leader = s3.units.find((u) => u.owner === 0)!;
     expect(leader.movesLeft).toBe(6);
     expect(leader.attacksLeft).toBe(1);
+  });
+
+  it("手番が回ってきたプレイヤーの hasRecruitedThisTurn はfalseに戻る", () => {
+    const state = newMatch();
+    const { state: s1 } = applyAction(
+      state,
+      P0,
+      { type: "recruit", unitDefId: "spearman", target: { x: 1, y: 1 } },
+      alwaysHit,
+    );
+    expect(s1.players[0].hasRecruitedThisTurn).toBe(true);
+    const { state: s2 } = applyAction(s1, P0, { type: "endTurn" }, alwaysHit);
+    // まだP0の番ではない(P1手番)ので、リセットされるのは次にP0の番が来た時
+    expect(s2.players[0].hasRecruitedThisTurn).toBe(true);
+    const { state: s3 } = applyAction(s2, P1, { type: "endTurn" }, alwaysHit);
+    expect(s3.players[0].hasRecruitedThisTurn).toBe(false);
   });
 });
 

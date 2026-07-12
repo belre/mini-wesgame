@@ -10,8 +10,8 @@ import { UNIT_SPRITES } from "../src/lib/content";
 const LOYALISTS_VS_NORTHERNERS = {
   mapId: "valley_crossing",
   players: [
-    { userId: "p0", factionId: "loyalists", gold: 100 },
-    { userId: "p1", factionId: "northerners", gold: 100 },
+    { userId: "p0", factionId: "loyalists", gold: 100, hasRecruitedThisTurn: false },
+    { userId: "p1", factionId: "northerners", gold: 100, hasRecruitedThisTurn: false },
   ],
 };
 
@@ -50,8 +50,8 @@ describe("planMatchAssets", () => {
     const mirror = planMatchAssets({
       mapId: "valley_crossing",
       players: [
-        { userId: "p0", factionId: "northerners", gold: 100 },
-        { userId: "p1", factionId: "northerners", gold: 100 },
+        { userId: "p0", factionId: "northerners", gold: 100, hasRecruitedThisTurn: false },
+        { userId: "p1", factionId: "northerners", gold: 100, hasRecruitedThisTurn: false },
       ],
     });
     const keys = mirror.map(matchAssetKey);
@@ -79,8 +79,8 @@ describe("planSpritePacks", () => {
   it("ミラーマッチ(同一陣営)でもパック名は重複しない", () => {
     const packs = planSpritePacks({
       players: [
-        { userId: "p0", factionId: "northerners", gold: 100 },
-        { userId: "p1", factionId: "northerners", gold: 100 },
+        { userId: "p0", factionId: "northerners", gold: 100, hasRecruitedThisTurn: false },
+        { userId: "p1", factionId: "northerners", gold: 100, hasRecruitedThisTurn: false },
       ],
     });
     expect(new Set(packs).size).toBe(packs.length);

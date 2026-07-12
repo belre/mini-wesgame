@@ -57,7 +57,6 @@ import CombatPreviewPanel from "./CombatPreviewPanel";
 import HexGrid from "./HexGrid";
 import { backNeighborOf, hexCenter, hexElementId } from "@/lib/board/geometry";
 import { OWNER_COLORS } from "@/lib/board/colors";
-import { playTurnStartSound, playUnitSelectSound } from "@/lib/sound";
 import { LoadingScreen } from "./LoadingScreen";
 import RecruitSheet from "./RecruitSheet";
 import RulesPanel from "./RulesPanel";
@@ -360,12 +359,6 @@ function BoardScreen(
   const isMyTurn =
     board.status === "active" && myIndex === board.activePlayer;
 
-  // 自分のターン開始時に太鼓の音を1回だけ鳴らす(isMyTurnがfalse→trueに変わった
-  // 時だけ発火。true継続中の再レンダーでは再発火しない。2026-07-12)
-  useEffect(() => {
-    if (isMyTurn) playTurnStartSound();
-  }, [isMyTurn]);
-
   const map = mapById(board.mapId);
   const meta2 = mapMeta(map);
 
@@ -403,13 +396,6 @@ function BoardScreen(
         : null;
     return board.units.find((u) => u.id === unitId) ?? null;
   }, [board, mode]);
-
-  // ユニット選択音: 新しくunitSelectedになった時だけ鳴らす(同じユニットのまま
-  // moveDraft/attackDraftとの往復(下書きキャンセル等)では再発火しない。2026-07-12)
-  const newlySelectedUnitId = mode.kind === "unitSelected" ? mode.unitId : null;
-  useEffect(() => {
-    if (newlySelectedUnitId) playUnitSelectSound();
-  }, [newlySelectedUnitId]);
 
   // 移動範囲プレビュー: 共有コアエンジンをブラウザ内で直接実行(APIコールなし)
   const reachable = useMemo(() => {

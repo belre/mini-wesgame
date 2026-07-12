@@ -519,27 +519,6 @@ select {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
 }
 
-/* ミュート切り替え(全画面共通・右上常設。2026-07-12)。陣営選択画面にも
-   出るのでposition:fixed(盤面の.fab/.help-fabと違い共通の祖先を持たない)。
-   .help-fab/.fabは.board-wrap(.match-topbarの下、position:relative)基準の
-   top:64pxなので、真の画面上端基準のfixedで同じ高さに揃えるには
-   .match-topbarの実高さ(39px)を足す必要がある(2026-07-12実測)。
-   .help-fab(right:86px, 50px幅)のさらに左に並べる */
-.mute-toggle {
-  position: fixed;
-  right: 146px;
-  top: 103px; /* 39(.match-topbar高さ) + 64(.help-fab等と同じ基準オフセット) */
-  z-index: 20;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  font-size: 18px;
-  line-height: 1;
-  background: var(--panel);
-  border: 1px solid var(--panel-border);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
-}
-
 /* How to Play表示中は盤面(雇用・移動)だけでなく、進行中の下書きUI
    (移動確認バー・戦闘プレビュー・雇用シート等、.overlay-bottomのz10)も
    隠さずそのまま・ただし操作だけ封じる(2026-07-10。ユーザー方針:

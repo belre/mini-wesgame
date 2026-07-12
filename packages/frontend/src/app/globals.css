@@ -540,7 +540,9 @@ select {
 .fab-menu {
   position: absolute;
   right: 16px;
-  top: 76px;
+  /* 2026-07-12: .fabをtop:64pxに下げた際にここを追従させ忘れ、開いたメニューが
+     ボタンと重なっていた。.fabの下端(64+60=124px)+余白ぶんに合わせる */
+  top: 132px;
   z-index: 20;
   display: flex;
   flex-direction: column;

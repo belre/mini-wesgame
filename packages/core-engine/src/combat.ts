@@ -81,17 +81,33 @@ function attackerOnlyDamage(
   attackerDef: UnitDef,
   timeOfDay: TimeOfDayDef,
   attackerTraits: readonly TraitId[],
-): number {
+): { base: number; alignMult: number } {
   const base = Math.max(1, attack.damage + traitDamageBonus(attack.range, attackerTraits));
   let alignMult = alignmentMultiplier(attackerDef.alignment, timeOfDay);
   if (hasTrait(attackerTraits, "fearless") && alignMult < 1) alignMult = 1;
-  return base * alignMult;
+  return { base, alignMult };
+}
+
+// ダメージの丸め(本家1.18のround_damage準拠。2026-07-14 Reddit報告の調査で判明):
+// .5ちょうどのときは「基礎値側へ寄せる」= ボーナス(総合倍率>1)は切り捨て・
+// ペナルティ(<1)は切り上げ。それ以外は通常の四捨五入。
+// 本家は整数演算だが、こちらは倍率を浮動小数で合成しているため.5ちょうどを
+// epsilonで判定する(倍率は1.25/0.75/2/0.5/(100-耐性)/100の積なので十分内側に入る)
+function roundDamage(raw: number, totalMult: number): number {
+  const frac = raw - Math.floor(raw);
+  const isHalf = Math.abs(frac - 0.5) < 1e-9;
+  const rounded = isHalf
+    ? totalMult > 1
+      ? Math.floor(raw)
+      : Math.ceil(raw)
+    : Math.round(raw);
+  return Math.max(1, rounded);
 }
 
 // 1打あたりのダメージ
 // = max(1, 基礎値+特性補正) × 時間帯補正(勇敢は不利補正を無効化) × 統率(+25%)
 //   × 耐性補正(装甲: 防御側の正の耐性を2倍・上限50%) × 特効倍率(突撃/奇襲)
-// 端数は四捨五入、最低1
+// 端数は本家round_damage準拠(.5は基礎値側へ)、最低1
 export function strikeDamage(
   attack: AttackDef,
   attackerDef: UnitDef,
@@ -108,12 +124,14 @@ export function strikeDamage(
   if (opts?.steadfastDefender && resistance > 0) {
     resistance = Math.min(50, resistance * 2); // 装甲: 弱点(負の値)には効果なし
   }
-  const damage =
-    attackerOnlyDamage(attack, attackerDef, timeOfDay, opts?.attackerTraits ?? []) *
+  const { base, alignMult } = attackerOnlyDamage(
+    attack, attackerDef, timeOfDay, opts?.attackerTraits ?? []);
+  const totalMult =
+    alignMult *
     (opts?.leadership ? 1.25 : 1) *
     ((100 - resistance) / 100) *
     (opts?.multiplier ?? 1);
-  return Math.max(1, Math.round(damage));
+  return roundDamage(base * totalMult, totalMult);
 }
 
 // 表示用の見積りダメージ: 対象(敵ユニット)が定まっていない場面(ユニット情報パネル等)で
@@ -131,11 +149,10 @@ export function displayDamage(
     slowed?: boolean; // unit.slowed。半減(端数の丸めはstrikeDamageと同じ最終丸め)
   },
 ): number {
-  const damage =
-    attackerOnlyDamage(attack, attackerDef, timeOfDay, opts?.attackerTraits ?? []) *
-    (opts?.leadership ? 1.25 : 1) *
-    (opts?.slowed ? 0.5 : 1);
-  return Math.max(1, Math.round(damage));
+  const { base, alignMult } = attackerOnlyDamage(
+    attack, attackerDef, timeOfDay, opts?.attackerTraits ?? []);
+  const totalMult = alignMult * (opts?.leadership ? 1.25 : 1) * (opts?.slowed ? 0.5 : 1);
+  return roundDamage(base * totalMult, totalMult);
 }
 
 // 統率: 同じ側の統率能力持ちユニットが隣接していれば与ダメージ+25%。

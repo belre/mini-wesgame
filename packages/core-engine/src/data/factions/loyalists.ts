@@ -247,6 +247,8 @@ export const LOYALISTS: Faction = {
       level: 1,
       hp: 33,
       movement: { type: "walk", points: 5 },
+      // 本家1.18は1.17開発期のリバランス(PR#7788)でdagger 4→5・maxXp 39→35に
+      // 変更済みだが、miniは1.16以前の値を意図的に維持する(2026-07-14 検討・決定)
       attacks: [
         { id: "dagger", name: "Dagger", damage: 4, count: 2, type: "blade", range: "melee" },
         { id: "bow", name: "Bow", damage: 6, count: 3, type: "pierce", range: "ranged" },
@@ -256,7 +258,7 @@ export const LOYALISTS: Faction = {
       cost: 14,
       spriteKey: "units/loyalists/bowman",
       traitConfig: HUMAN_TRAITS,
-      maxXp: 39, // 2026-07-08 ユーザー指定
+      maxXp: 39, // 2026-07-08 ユーザー指定(1.16値を意図的に維持。上記コメント参照)
       advancesTo: ["longbowman"]
     },
     {
